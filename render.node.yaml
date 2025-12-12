@@ -1,0 +1,18 @@
+# Example Render service (Node environment) that runs migrations during build
+services:
+  - type: web
+    name: on-demand-service-node
+    env: node
+    branch: main
+    plan: free
+    disk: 512
+    buildCommand: "npm install && npm run build && npm run migrate:js"
+    startCommand: "npm start"
+    healthCheckPath: "/health"
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: MONGO_URI
+        value: ""
+      - key: JWT_SECRET
+        value: ""

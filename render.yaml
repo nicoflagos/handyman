@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: on-demand-service
+    env: docker
+    dockerfilePath: on-demand-service-app/Dockerfile
+    branch: main
+    plan: free
+    disk: 512
+    ports:
+      - 3000
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"

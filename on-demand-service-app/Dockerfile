@@ -12,8 +12,11 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
+# Build TypeScript to JS
+RUN npm run build
+
 # Expose the application port
 EXPOSE 3000
 
-# Command to run the application
-CMD ["npm", "start"]
+# Run migrations (compiled) then start
+CMD ["sh", "-c", "npm run migrate:js && npm start"]

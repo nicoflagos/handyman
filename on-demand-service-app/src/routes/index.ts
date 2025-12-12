@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Express, Router } from 'express';
 import AuthController from '../controllers/auth.controller';
 import UserController from '../controllers/user.controller';
 import OrdersController from '../controllers/orders.controller';
@@ -22,4 +22,6 @@ router.post('/orders', ordersController.createOrder);
 router.get('/orders/:id', ordersController.getOrder);
 router.put('/orders/:id', ordersController.updateOrder);
 
-export default router;
+export function setRoutes(app: Express) {
+  app.use('/api', router);
+}

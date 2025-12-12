@@ -1,26 +1,36 @@
+import jwt from 'jsonwebtoken';
+import { User } from '../models/mongo/user.schema';
+import config from '../config';
+
 export class AuthService {
-    private users: { [key: string]: { password: string } } = {};
-
-    constructor() {
-        // Initialize with some dummy users for demonstration
-        this.users['user@example.com'] = { password: 'password123' };
-    }
-
-    public validateCredentials(email: string, password: string): boolean {
-        const user = this.users[email];
-        return user ? user.password === password : false;
-    }
-
-    public generateToken(email: string): string {
-        // In a real application, you would use a library to generate a JWT token
-        return `token-for-${email}`;
-    }
-
-    public registerUser(email: string, password: string): boolean {
-        if (this.users[email]) {
-            return false; // User already exists
+    public async register(email: string, password: string, username?: string) {
+        const existingUser = await User.findOne({ $or: [{ email }, { username }] }).exec();
+        if (existingUser) {
+            throw new Error('User already exists');
         }
-        this.users[email] = { password };
-        return true; // User registered successfully
+        const user = new User({ email, password, username: username || email.split('@')[0] });
+        await user.save();
+        return { email, username: user.username };
+    }
+
+    public async login(email: string, password: string): Promise<string> {
+        const user = await User.findOne({ email }).exec();
+        if (!user) {
+            throw new Error('Invalid email or password');
+        }
+        const isValid = await user.comparePassword(password);
+        if (!isValid) {
+            throw new Error('Invalid email or password');
+        }
+        const token = jwt.sign({ userId: user._id, email: user.email }, config.jwtSecret, { expiresIn: '24h' });
+        return token;
+    }
+
+    public verifyToken(token: string) {
+        try {
+            return jwt.verify(token, config.jwtSecret) as any;
+        } catch (err) {
+            throw new Error('Invalid token');
+        }
     }
 }
