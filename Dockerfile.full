@@ -13,6 +13,7 @@ FROM node:18 AS backend_builder
 WORKDIR /app/backend
 COPY on-demand-service-app/package*.json ./
 RUN npm install
+RUN npm audit fix --force || true
 COPY on-demand-service-app/ .
 # Copy built client into backend folder
 COPY --from=client_builder /app/client/dist ./client/dist
@@ -28,4 +29,4 @@ COPY --from=backend_builder /app/backend/node_modules ./node_modules
 COPY --from=backend_builder /app/backend/client/dist ./client/dist
 ENV SERVE_STATIC=true
 EXPOSE 3000
-CMD ["sh", "-c", "node dist/scripts/migrate.js && node dist/app.js"]
+CMD ["sh", "-c", "node dist/scripts/migrate.js && node dist/src/app.js"]
