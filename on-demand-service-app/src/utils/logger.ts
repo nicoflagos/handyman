@@ -1,26 +1,29 @@
-import winston from 'winston';
+type LogMeta = unknown;
 
-const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json()
-    ),
-    transports: [
-        new winston.transports.Console(),
-        new winston.transports.File({ filename: 'error.log', level: 'error' }),
-        new winston.transports.File({ filename: 'combined.log' })
-    ],
-});
-
-export const logInfo = (message: string) => {
-    logger.info(message);
+export const logger = {
+  info: (message: string, meta?: LogMeta) => {
+    if (meta !== undefined) {
+      console.info(`[INFO] ${message}`, meta);
+      return;
+    }
+    console.info(`[INFO] ${message}`);
+  },
+  error: (message: string, meta?: LogMeta) => {
+    if (meta !== undefined) {
+      console.error(`[ERROR] ${message}`, meta);
+      return;
+    }
+    console.error(`[ERROR] ${message}`);
+  },
+  debug: (message: string, meta?: LogMeta) => {
+    if (meta !== undefined) {
+      console.debug(`[DEBUG] ${message}`, meta);
+      return;
+    }
+    console.debug(`[DEBUG] ${message}`);
+  },
 };
 
-export const logError = (message: string) => {
-    logger.error(message);
-};
-
-export const logDebug = (message: string) => {
-    logger.debug(message);
-};
+export const logInfo = logger.info;
+export const logError = logger.error;
+export const logDebug = logger.debug;
