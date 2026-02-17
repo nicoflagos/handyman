@@ -20,5 +20,5 @@ RUN npm run build
 # Expose the application port
 EXPOSE 3000
 
-# Run migrations (compiled) then start
-CMD ["sh", "-c", "npm run migrate:js && npm start"]
+# Optionally run migrations before starting (set `RUN_MIGRATIONS=true`)
+CMD ["sh", "-c", "if [ \"$RUN_MIGRATIONS\" = 'true' ]; then npm run migrate:js; fi; npm start"]

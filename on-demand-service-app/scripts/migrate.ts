@@ -30,21 +30,31 @@ async function migrate() {
 
     await mongoose.connect(uri);
 
-    // Example: ensure indexes and seed an admin user if none exists
+    // Ensure indexes
     await User.init();
     await Order.init();
 
-    const existing = await User.findOne({ email: 'admin@example.com' }).exec();
-    if (!existing) {
-        const admin = new User({
-            username: 'admin',
-            email: 'admin@example.com',
-            password: 'admin123',
-        });
-        await admin.save();
-        console.log('Seeded admin user (bcrypt-hashed password)');
-    } else {
-        console.log('Admin user already exists, skipping seeding');
+    // Optional seeding (off by default)
+    const seedAdmin = process.env.SEED_ADMIN === 'true';
+    if (seedAdmin) {
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
+        const adminPassword = process.env.ADMIN_PASSWORD;
+        if (!adminPassword) {
+            throw new Error('SEED_ADMIN=true requires ADMIN_PASSWORD to be set');
+        }
+
+        const existing = await User.findOne({ email: adminEmail }).exec();
+        if (!existing) {
+            const admin = new User({
+                username: 'admin',
+                email: adminEmail,
+                password: adminPassword,
+            });
+            await admin.save();
+            console.log(`Seeded admin user: ${adminEmail}`);
+        } else {
+            console.log('Admin user already exists, skipping seeding');
+        }
     }
 
     await mongoose.disconnect();
