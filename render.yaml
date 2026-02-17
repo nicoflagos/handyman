@@ -2,6 +2,7 @@ services:
   - type: web
     name: on-demand-service
     env: docker
+    rootDir: .
     dockerfilePath: Dockerfile
     branch: main
     plan: free
