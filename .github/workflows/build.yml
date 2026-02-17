@@ -19,7 +19,7 @@ jobs:
       
       - name: Build Docker image
         run: |
-          docker build -f Dockerfile.full -t on-demand-full:latest .
+          docker build -t on-demand-full:latest .
       
       - name: Run smoke test on image
         run: |
