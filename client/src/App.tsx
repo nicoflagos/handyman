@@ -9,10 +9,18 @@ import { Layout } from './components/Layout';
 import Services from './pages/Services';
 import CreateOrder from './pages/CreateOrder';
 import OrderDetail from './pages/OrderDetail';
+import Admin from './pages/Admin';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
   if (!auth.token) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function RequireRole({ role, children }: { role: 'admin' | 'provider' | 'customer'; children: React.ReactNode }) {
+  const auth = useAuth();
+  if (!auth.token) return <Navigate to="/login" replace />;
+  if (auth.claims?.role !== role) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -61,6 +69,14 @@ export default function App() {
               <RequireAuth>
                 <OrderDetail />
               </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <RequireRole role="admin">
+                <Admin />
+              </RequireRole>
             }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
