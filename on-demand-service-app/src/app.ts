@@ -7,6 +7,7 @@ import path from 'path';
 
 const app = express();
 const PORT = config.port || 3000;
+const SKIP_DB = process.env.SKIP_DB === 'true';
 
 // Middleware
 app.use(express.json());
@@ -20,23 +21,28 @@ app.get('/health', (_req, res) => {
 // Set up routes
 setRoutes(app);
 
-// Start the server after DB connection
-connectDB()
-    .then(() => {
-        // Optionally serve built frontend when `SERVE_STATIC=true` (set in Render or Docker)
-        if (process.env.SERVE_STATIC === 'true') {
-            const clientDist = path.join(__dirname, '..', 'client', 'dist');
-            app.use(express.static(clientDist));
-            app.get('*', (_req, res) => {
-                res.sendFile(path.join(clientDist, 'index.html'));
-            });
-        }
-
-        app.listen(PORT, () => {
-            logger.info(`Server is running on http://localhost:${PORT}`);
+function startServer(): void {
+    if (process.env.SERVE_STATIC === 'true') {
+        const clientDist = path.join(__dirname, '..', 'client', 'dist');
+        app.use(express.static(clientDist));
+        app.get('*', (_req, res) => {
+            res.sendFile(path.join(clientDist, 'index.html'));
         });
-    })
-    .catch(err => {
-        logger.error('Failed to start server due to DB connection error', err as Error);
-        process.exit(1);
+    }
+
+    app.listen(PORT, () => {
+        logger.info(`Server is running on http://localhost:${PORT}`);
     });
+}
+
+if (SKIP_DB) {
+    logger.info('SKIP_DB=true: starting server without MongoDB connection');
+    startServer();
+} else {
+    connectDB()
+        .then(() => startServer())
+        .catch(err => {
+            logger.error('Failed to start server due to DB connection error', err as Error);
+            process.exit(1);
+        });
+}
