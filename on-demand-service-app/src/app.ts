@@ -24,17 +24,31 @@ setRoutes(app);
 
 function startServer(): void {
     if (process.env.SERVE_STATIC === 'true') {
-        // In Docker we typically copy the built client to `/usr/src/app/client/dist`.
-        // Use CWD so this works whether the server runs from `dist/` or from ts-node.
-        const clientDist = path.resolve(process.cwd(), 'client', 'dist');
-        const indexHtml = path.join(clientDist, 'index.html');
-        if (fs.existsSync(indexHtml)) {
+        const candidates = [
+            // Docker/root runtime (WORKDIR=/usr/src/app)
+            path.resolve(process.cwd(), 'client', 'dist'),
+            // If running from compiled output and CWD isn't the repo root
+            path.resolve(__dirname, '..', '..', 'client', 'dist'),
+            path.resolve(__dirname, '..', 'client', 'dist'),
+        ];
+
+        const clientDist = candidates.find(d => fs.existsSync(path.join(d, 'index.html')));
+        if (clientDist) {
+            const indexHtml = path.join(clientDist, 'index.html');
             app.use(express.static(clientDist));
             app.get('*', (_req, res) => {
                 res.sendFile(indexHtml);
             });
+            logger.info(`Serving static frontend from: ${clientDist}`);
         } else {
-            logger.info(`SERVE_STATIC=true but no frontend build found at: ${indexHtml}`);
+            logger.info(
+                `SERVE_STATIC=true but no frontend build found. Looked in: ${candidates.join(', ')}`,
+            );
+            app.get('/', (_req, res) => {
+                res
+                    .status(404)
+                    .send('Frontend not built/available. Try /health or deploy with Dockerfile.full.');
+            });
         }
     }
 
