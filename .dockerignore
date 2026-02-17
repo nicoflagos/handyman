@@ -1,0 +1,21 @@
+# Reduce Docker build context and avoid copying host-installed dependencies
+**/node_modules
+**/dist
+**/.cache
+**/.turbo
+**/.next
+**/.DS_Store
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# Local env files
+**/.env
+**/.env.*
+
+# Git / editor
+.git
+.github
+.vscode
+

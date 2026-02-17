@@ -1,4 +1,4 @@
-FROM node:14
+FROM node:18
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -6,14 +6,13 @@ WORKDIR /usr/src/app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies (uses lockfileVersion 3)
+RUN npm ci
 
-# Fix vulnerabilities
-RUN npm audit fix --force || true
-
-# Copy the rest of the application code
-COPY . .
+# Copy only the source needed to build/run (prevents copying host `node_modules`)
+COPY tsconfig.json ./
+COPY src ./src
+COPY scripts ./scripts
 
 # Build TypeScript to JS
 RUN npm run build
