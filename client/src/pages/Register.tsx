@@ -9,6 +9,7 @@ import { InlineNotice } from '../ui/Toast';
 export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'customer' | 'provider'>('customer');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,7 @@ export default function Register() {
     setSuccess(null);
     try {
       setLoading(true);
-      await register({ email, password });
+      await register({ email, password, role });
       setSuccess('Registered successfully — redirecting to login…');
       setTimeout(() => navigate('/login', { replace: true }), 800);
     } catch (err: any) {
@@ -49,6 +50,28 @@ export default function Register() {
                 inputMode="email"
                 placeholder="you@example.com"
               />
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Account type</span>
+                <select
+                  value={role}
+                  onChange={e => setRole(e.target.value as 'customer' | 'provider')}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.14)',
+                    background: 'rgba(0,0,0,0.18)',
+                    color: 'rgba(255,255,255,0.92)',
+                    outline: 'none',
+                  }}
+                >
+                  <option value="customer">Customer</option>
+                  <option value="provider">Provider</option>
+                </select>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
+                  Providers can accept jobs from the marketplace.
+                </span>
+              </label>
               <Input
                 label="Password"
                 type="password"
@@ -87,4 +110,3 @@ export default function Register() {
     </Layout>
   );
 }
-

@@ -6,6 +6,9 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { Layout } from './components/Layout';
+import Services from './pages/Services';
+import CreateOrder from './pages/CreateOrder';
+import OrderDetail from './pages/OrderDetail';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
@@ -33,6 +36,30 @@ export default function App() {
             element={
               <RequireAuth>
                 <Dashboard />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/services"
+            element={
+              <RequireAuth>
+                <Services />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/orders/new"
+            element={
+              <RequireAuth>
+                <CreateOrder />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/orders/:id"
+            element={
+              <RequireAuth>
+                <OrderDetail />
               </RequireAuth>
             }
           />

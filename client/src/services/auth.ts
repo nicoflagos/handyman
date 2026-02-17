@@ -1,14 +1,19 @@
-import axios from 'axios';
-
-const API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
-const API_BASE = API_ORIGIN ? `${API_ORIGIN}/api` : '/api';
+import { apiClient } from '../apiClient';
 
 export async function login({ email, password }: { email: string; password: string }) {
-  const res = await axios.post(`${API_BASE}/auth/login`, { email, password });
+  const res = await apiClient.post('/auth/login', { email, password });
   return res.data.token;
 }
 
-export async function register({ email, password }: { email: string; password: string }) {
-  const res = await axios.post(`${API_BASE}/auth/register`, { email, password });
+export async function register({
+  email,
+  password,
+  role,
+}: {
+  email: string;
+  password: string;
+  role?: 'customer' | 'provider';
+}) {
+  const res = await apiClient.post('/auth/register', { email, password, role });
   return res.data;
 }
