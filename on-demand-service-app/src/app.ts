@@ -4,6 +4,7 @@ import { logger } from './utils/logger';
 import config from './config/index';
 import connectDB from './db';
 import path from 'path';
+import fs from 'fs';
 
 const app = express();
 const PORT = config.port || 3000;
@@ -23,11 +24,18 @@ setRoutes(app);
 
 function startServer(): void {
     if (process.env.SERVE_STATIC === 'true') {
-        const clientDist = path.join(__dirname, '..', 'client', 'dist');
-        app.use(express.static(clientDist));
-        app.get('*', (_req, res) => {
-            res.sendFile(path.join(clientDist, 'index.html'));
-        });
+        // In Docker we typically copy the built client to `/usr/src/app/client/dist`.
+        // Use CWD so this works whether the server runs from `dist/` or from ts-node.
+        const clientDist = path.resolve(process.cwd(), 'client', 'dist');
+        const indexHtml = path.join(clientDist, 'index.html');
+        if (fs.existsSync(indexHtml)) {
+            app.use(express.static(clientDist));
+            app.get('*', (_req, res) => {
+                res.sendFile(indexHtml);
+            });
+        } else {
+            logger.info(`SERVE_STATIC=true but no frontend build found at: ${indexHtml}`);
+        }
     }
 
     app.listen(PORT, () => {
