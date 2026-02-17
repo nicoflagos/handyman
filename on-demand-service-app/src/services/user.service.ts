@@ -1,28 +1,22 @@
+import { Types } from 'mongoose';
+import { User } from '../models/mongo/user.schema';
+
 export class UserService {
-    private users: any[] = []; // This will hold user data temporarily
+  async getById(userId: string) {
+    if (!Types.ObjectId.isValid(userId)) return null;
+    return User.findById(userId).select('-password').exec();
+  }
 
-    constructor() {}
+  async updateProfile(userId: string, updatedData: { username?: string }) {
+    if (!Types.ObjectId.isValid(userId)) return null;
+    const update: any = {};
+    if (updatedData.username) update.username = updatedData.username;
+    return User.findByIdAndUpdate(userId, update, { new: true }).select('-password').exec();
+  }
 
-    createUser(userData: any) {
-        const newUser = { id: this.users.length + 1, ...userData };
-        this.users.push(newUser);
-        return newUser;
-    }
-
-    getUserById(userId: number) {
-        return this.users.find(user => user.id === userId);
-    }
-
-    updateUser(userId: number, updatedData: any) {
-        const userIndex = this.users.findIndex(user => user.id === userId);
-        if (userIndex !== -1) {
-            this.users[userIndex] = { ...this.users[userIndex], ...updatedData };
-            return this.users[userIndex];
-        }
-        return null;
-    }
-
-    getAllUsers() {
-        return this.users;
-    }
+  async getRole(userId: Types.ObjectId): Promise<'customer' | 'provider' | 'admin'> {
+    const user = await User.findById(userId).select('role').exec();
+    return (user as any)?.role || 'customer';
+  }
 }
+

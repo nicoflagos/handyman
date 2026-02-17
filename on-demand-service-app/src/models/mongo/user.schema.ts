@@ -5,6 +5,7 @@ interface IUserDocument extends Document {
   username: string;
   email: string;
   password: string;
+  role: 'customer' | 'provider' | 'admin';
   createdAt: Date;
   updatedAt: Date;
   comparePassword(password: string): Promise<boolean>;
@@ -14,6 +15,7 @@ const UserSchema = new Schema<IUserDocument>({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true, trim: true, lowercase: true },
   password: { type: String, required: true },
+  role: { type: String, enum: ['customer', 'provider', 'admin'], default: 'customer', index: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

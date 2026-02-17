@@ -6,6 +6,7 @@ type AuthRequest = Request & { userId?: string };
 
 type JwtPayload = {
     userId?: string;
+    role?: 'customer' | 'provider' | 'admin';
 };
 
 export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {

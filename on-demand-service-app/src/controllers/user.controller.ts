@@ -6,8 +6,8 @@ export class UserController {
 
     async getUserProfile(req: Request, res: Response) {
         try {
-            const userId = Number(req.params.id);
-            const user = await this.userService.getUserById(userId);
+            const userId = req.params.id;
+            const user = await this.userService.getById(userId);
             if (!user) {
                 return res.status(404).json({ message: 'User not found' });
             }
@@ -19,9 +19,9 @@ export class UserController {
 
     async updateUserProfile(req: Request, res: Response) {
         try {
-            const userId = Number(req.params.id);
+            const userId = req.params.id;
             const updatedData = req.body;
-            const updatedUser = await this.userService.updateUser(userId, updatedData);
+            const updatedUser = await this.userService.updateProfile(userId, updatedData);
             if (!updatedUser) {
                 return res.status(404).json({ message: 'User not found' });
             }
