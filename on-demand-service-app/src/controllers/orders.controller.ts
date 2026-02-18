@@ -85,6 +85,23 @@ export class OrdersController {
       const isCustomer = order.customerId?.toString() === req.userId;
       const isProvider = order.providerId?.toString() === req.userId;
       if (!(role === 'admin' || isCustomer || isProvider)) {
+        // Allow providers to view *unassigned* requested orders that match their profile,
+        // so they can review details before accepting.
+        if (role === 'provider' && order.status === 'requested' && !order.providerId) {
+          const provider = await this.userService.getProviderProfile(viewerId);
+          const profile = provider?.providerProfile;
+          const matches =
+            !!profile?.available &&
+            !!profile?.zip &&
+            profile.zip === (order as any).zip &&
+            Array.isArray(profile.skills) &&
+            profile.skills.includes(order.serviceKey);
+
+          if (matches) {
+            return res.status(200).json(order);
+          }
+        }
+
         return res.status(403).json({ message: 'Forbidden' });
       }
 
