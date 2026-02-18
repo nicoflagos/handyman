@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { InlineNotice } from '../ui/Toast';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { NigeriaLocationSelect, NigeriaLocationValue } from '../components/NigeriaLocationSelect';
 
 function useQuery() {
   const { search } = useLocation();
@@ -23,9 +24,18 @@ export default function CreateOrder() {
   const [serviceKey, setServiceKey] = useState(query.get('service') || 'handyman');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [address, setAddress] = useState('');
-  const [zip, setZip] = useState('');
+  const [location, setLocation] = useState<NigeriaLocationValue>({ state: '', lga: '', street: '' });
   const [scheduledAt, setScheduledAt] = useState('');
+
+  const address = useMemo(() => {
+    const parts = [
+      location.street?.trim(),
+      location.lga ? `${location.lga} LGA` : '',
+      location.state?.trim(),
+      'Nigeria',
+    ].filter(Boolean);
+    return parts.join(', ');
+  }, [location.lga, location.state, location.street]);
 
   useEffect(() => {
     listServices()
@@ -36,6 +46,10 @@ export default function CreateOrder() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!location.state || !location.lga) {
+      setError('Please select your State and LGA.');
+      return;
+    }
     setSubmitState('submitting');
     try {
       const order = await createOrder({
@@ -43,7 +57,9 @@ export default function CreateOrder() {
         title: title || `Request: ${serviceKey}`,
         description: description || undefined,
         address: address || undefined,
-        zip,
+        country: 'Nigeria',
+        state: location.state,
+        lga: location.lga,
         scheduledAt: scheduledAt || undefined,
       });
       navigate(`/orders/${order._id}`, { replace: true });
@@ -64,7 +80,7 @@ export default function CreateOrder() {
               <div>
                 <h2 style={{ marginTop: 0, marginBottom: 6 }}>Create an order</h2>
                 <p className="muted" style={{ margin: 0 }}>
-                  Describe the job, then submit. A provider can accept it from the marketplace.
+                  Describe the job, then submit. A handyman can accept it from the marketplace.
                 </p>
               </div>
               <Link to="/services" style={{ textDecoration: 'none' }}>
@@ -117,15 +133,7 @@ export default function CreateOrder() {
                   }}
                 />
               </label>
-              <Input label="Address" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, City" />
-              <Input
-                label="ZIP"
-                value={zip}
-                onChange={e => setZip(e.target.value)}
-                inputMode="numeric"
-                placeholder="e.g. 10001"
-                hint="ZIP is required for provider matching."
-              />
+              <NigeriaLocationSelect value={location} onChange={setLocation} />
               <Input
                 label="Preferred date/time"
                 value={scheduledAt}
@@ -152,9 +160,9 @@ export default function CreateOrder() {
             <div className="pill" style={{ marginBottom: 10 }}>
               Matching
             </div>
-            <h3 style={{ marginTop: 0 }}>How providers find you</h3>
+            <h3 style={{ marginTop: 0 }}>How handymen find you</h3>
             <p className="muted" style={{ marginBottom: 0 }}>
-              Provider accounts can browse the marketplace and accept available orders. Next we’ll add distance, pricing,
+              Handyman accounts can browse the marketplace and accept available orders. Next we’ll add distance, pricing,
               and availability filters.
             </p>
           </div>

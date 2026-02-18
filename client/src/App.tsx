@@ -64,7 +64,7 @@ export default function App() {
           <Route
             path="/services"
             element={
-              <RequireAnyRole roles={['customer', 'admin']}>
+              <RequireAnyRole roles={['customer']}>
                 <Services />
               </RequireAnyRole>
             }
@@ -72,7 +72,7 @@ export default function App() {
           <Route
             path="/orders/new"
             element={
-              <RequireAnyRole roles={['customer', 'admin']}>
+              <RequireAnyRole roles={['customer']}>
                 <CreateOrder />
               </RequireAnyRole>
             }

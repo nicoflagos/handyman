@@ -16,7 +16,11 @@ export interface IOrderDocument extends Document {
   title: string;
   description?: string;
   address?: string;
-  zip: string;
+  // Deprecated (v1). Kept for backward compatibility with older clients.
+  zip?: string;
+  country: string;
+  state: string;
+  lga: string;
   scheduledAt?: Date;
   status: OrderStatus;
   timeline: OrderTimelineEvent[];
@@ -32,7 +36,10 @@ const OrderSchema = new Schema<IOrderDocument>(
     title: { type: String, required: true },
     description: { type: String },
     address: { type: String },
-    zip: { type: String, required: true, trim: true, index: true },
+    zip: { type: String, required: false, trim: true, index: true },
+    country: { type: String, required: true, trim: true, index: true },
+    state: { type: String, required: true, trim: true, index: true },
+    lga: { type: String, required: true, trim: true, index: true },
     scheduledAt: { type: Date },
     status: {
       type: String,

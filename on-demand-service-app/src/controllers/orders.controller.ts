@@ -31,8 +31,8 @@ export class OrdersController {
       const provider = await this.userService.getProviderProfile(providerId);
       const profile = provider?.providerProfile;
       if (!profile?.available) return res.status(200).json([]);
-      if (!profile?.zip) {
-        return res.status(400).json({ message: 'Set your provider ZIP before browsing the marketplace' });
+      if (!profile?.country || !profile?.state || !profile?.lga) {
+        return res.status(400).json({ message: 'Set your handyman Country, State, and LGA before browsing the marketplace' });
       }
       if (!Array.isArray(profile.skills) || profile.skills.length === 0) {
         return res.status(400).json({ message: 'Select at least one skill before browsing the marketplace' });
@@ -40,7 +40,9 @@ export class OrdersController {
 
       const orders = await this.orderService.listMarketplace({
         limit: 50,
-        zip: profile.zip,
+        country: profile.country,
+        state: profile.state,
+        lga: profile.lga,
         serviceKeys: profile.skills,
       });
       return res.status(200).json(orders);
@@ -53,10 +55,10 @@ export class OrdersController {
     try {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
       const role = await this.userService.getRole(new Types.ObjectId(req.userId));
-      if (role === 'provider') return res.status(403).json({ message: 'Providers cannot create orders' });
-      const { serviceKey, title, description, address, scheduledAt, zip } = req.body || {};
-      if (!serviceKey || !title || !zip) {
-        return res.status(400).json({ message: 'serviceKey, title, and zip are required' });
+      if (role !== 'customer') return res.status(403).json({ message: 'Only customers can create orders' });
+      const { serviceKey, title, description, address, scheduledAt, country, state, lga } = req.body || {};
+      if (!serviceKey || !title || !country || !state || !lga) {
+        return res.status(400).json({ message: 'serviceKey, title, country, state, and lga are required' });
       }
 
       const customerId = new Types.ObjectId(req.userId);
@@ -66,7 +68,9 @@ export class OrdersController {
         title,
         description,
         address,
-        zip,
+        country,
+        state,
+        lga,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
       });
       return res.status(201).json(order);
@@ -94,8 +98,12 @@ export class OrdersController {
           const profile = provider?.providerProfile;
           const matches =
             !!profile?.available &&
-            !!profile?.zip &&
-            profile.zip === (order as any).zip &&
+            !!profile?.country &&
+            !!profile?.state &&
+            !!profile?.lga &&
+            profile.country === (order as any).country &&
+            profile.state === (order as any).state &&
+            profile.lga === (order as any).lga &&
             Array.isArray(profile.skills) &&
             profile.skills.includes(order.serviceKey);
 

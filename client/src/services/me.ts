@@ -1,7 +1,11 @@
 import { apiClient } from '../apiClient';
 
 export type ProviderProfile = {
+  // Deprecated (v1). Kept for backward compatibility with older clients.
   zip?: string;
+  country?: string;
+  state?: string;
+  lga?: string;
   skills: string[];
   available: boolean;
   availabilityNote?: string;
@@ -24,4 +28,3 @@ export async function updateProviderProfile(input: ProviderProfile): Promise<Me>
   const res = await apiClient.put('/providers/me', input);
   return res.data as Me;
 }
-

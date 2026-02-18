@@ -36,7 +36,7 @@ export default function Dashboard() {
             </p>
 
             <div className="row" style={{ flexWrap: 'wrap', marginTop: 12 }}>
-              {auth.claims?.role !== 'provider' ? (
+              {auth.claims?.role === 'customer' ? (
                 <Link to="/services" style={{ textDecoration: 'none' }}>
                   <Button>Book a service</Button>
                 </Link>
@@ -47,7 +47,7 @@ export default function Dashboard() {
             </div>
 
             <div style={{ height: 14 }} />
-            <h3 style={{ marginBottom: 10 }}>My orders</h3>
+            <h3 style={{ marginBottom: 10 }}>{isProvider ? 'My jobs' : 'My orders'}</h3>
             {state === 'error' ? <InlineNotice kind="error">Unable to load orders.</InlineNotice> : null}
             {state === 'loading' ? <span className="muted">Loading…</span> : null}
             <div className="col" style={{ gap: 10 }}>
@@ -74,7 +74,9 @@ export default function Dashboard() {
                 </Link>
               ))}
               {state === 'ready' && orders.length === 0 ? (
-                <span className="muted">No orders yet. Book a service to get started.</span>
+                <span className="muted">
+                  {isProvider ? 'No assigned jobs yet.' : 'No orders yet. Book a service to get started.'}
+                </span>
               ) : null}
             </div>
           </div>
@@ -94,7 +96,7 @@ export default function Dashboard() {
                 </p>
                 {auth.claims?.role === 'provider' ? (
                   <Link to="/provider/settings" style={{ textDecoration: 'none' }}>
-                    <Button variant="ghost">Provider settings</Button>
+                    <Button variant="ghost">Handyman settings</Button>
                   </Link>
                 ) : null}
                 <div className="col" style={{ gap: 10 }}>

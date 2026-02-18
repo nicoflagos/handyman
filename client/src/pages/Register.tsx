@@ -66,10 +66,10 @@ export default function Register() {
                   }}
                 >
                   <option value="customer">Customer</option>
-                  <option value="provider">Provider</option>
+                  <option value="provider">Handyman</option>
                 </select>
                 <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
-                  Providers can accept jobs from the marketplace.
+                  Handymen can accept jobs from the marketplace.
                 </span>
               </label>
               <Input

@@ -26,10 +26,21 @@ export class UserService {
 
   async updateProviderProfile(
     userId: Types.ObjectId,
-    input: { zip?: string; skills?: string[]; available?: boolean; availabilityNote?: string },
+    input: {
+      zip?: string;
+      country?: string;
+      state?: string;
+      lga?: string;
+      skills?: string[];
+      available?: boolean;
+      availabilityNote?: string;
+    },
   ) {
     const update: any = {};
     if (typeof input.zip === 'string') update['providerProfile.zip'] = input.zip.trim();
+    if (typeof input.country === 'string') update['providerProfile.country'] = input.country.trim();
+    if (typeof input.state === 'string') update['providerProfile.state'] = input.state.trim();
+    if (typeof input.lga === 'string') update['providerProfile.lga'] = input.lga.trim();
     if (Array.isArray(input.skills)) update['providerProfile.skills'] = input.skills;
     if (typeof input.available === 'boolean') update['providerProfile.available'] = input.available;
     if (typeof input.availabilityNote === 'string') update['providerProfile.availabilityNote'] = input.availabilityNote;

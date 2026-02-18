@@ -4,7 +4,11 @@ import bcryptjs from 'bcryptjs';
 export type UserRole = 'customer' | 'provider' | 'admin';
 
 export type ProviderProfile = {
+  // Deprecated (v1). Kept for backward compatibility with older clients.
   zip?: string;
+  country?: string;
+  state?: string;
+  lga?: string;
   skills: string[];
   available: boolean;
   availabilityNote?: string;
@@ -28,6 +32,9 @@ const UserSchema = new Schema<IUserDocument>({
   role: { type: String, enum: ['customer', 'provider', 'admin'], default: 'customer', index: true },
   providerProfile: {
     zip: { type: String, required: false, trim: true },
+    country: { type: String, required: false, trim: true },
+    state: { type: String, required: false, trim: true },
+    lga: { type: String, required: false, trim: true },
     skills: { type: [String], default: [] },
     available: { type: Boolean, default: true },
     availabilityNote: { type: String, required: false },

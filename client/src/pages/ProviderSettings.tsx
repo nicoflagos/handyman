@@ -4,10 +4,11 @@ import { InlineNotice } from '../ui/Toast';
 import { Button } from '../ui/Button';
 import { getMe, updateProviderProfile } from '../services/me';
 import { listServices, ServiceItem } from '../services/catalog';
+import { NigeriaLocationSelect, NigeriaLocationValue } from '../components/NigeriaLocationSelect';
 
 export default function ProviderSettings() {
   const [services, setServices] = React.useState<ServiceItem[]>([]);
-  const [zip, setZip] = React.useState('');
+  const [location, setLocation] = React.useState<NigeriaLocationValue>({ state: '', lga: '', street: '' });
   const [available, setAvailable] = React.useState(true);
   const [availabilityNote, setAvailabilityNote] = React.useState('');
   const [skills, setSkills] = React.useState<Record<string, boolean>>({});
@@ -20,7 +21,7 @@ export default function ProviderSettings() {
     Promise.all([getMe(), listServices()])
       .then(([me, svc]) => {
         setServices(svc);
-        setZip(me.providerProfile?.zip || '');
+        setLocation({ state: me.providerProfile?.state || '', lga: me.providerProfile?.lga || '', street: '' });
         setAvailable(me.providerProfile?.available ?? true);
         setAvailabilityNote(me.providerProfile?.availabilityNote || '');
         const map: Record<string, boolean> = {};
@@ -33,13 +34,24 @@ export default function ProviderSettings() {
 
   async function save() {
     setMsg(null);
+    if (!location.state || !location.lga) {
+      setMsg({ kind: 'error', text: 'Please select your State and LGA.' });
+      return;
+    }
     setSaving(true);
     try {
       const selected = Object.entries(skills)
         .filter(([, v]) => v)
         .map(([k]) => k);
-      await updateProviderProfile({ zip, skills: selected, available, availabilityNote });
-      setMsg({ kind: 'success', text: 'Saved provider settings.' });
+      await updateProviderProfile({
+        country: 'Nigeria',
+        state: location.state,
+        lga: location.lga,
+        skills: selected,
+        available,
+        availabilityNote,
+      });
+      setMsg({ kind: 'success', text: 'Saved handyman settings.' });
     } catch (err: any) {
       setMsg({ kind: 'error', text: err?.response?.data?.message || 'Unable to save settings' });
     } finally {
@@ -52,9 +64,9 @@ export default function ProviderSettings() {
       <div className="grid2" style={{ alignItems: 'start' }}>
         <div className="card">
           <div className="cardInner">
-            <h2 style={{ marginTop: 0, marginBottom: 6 }}>Provider settings</h2>
+            <h2 style={{ marginTop: 0, marginBottom: 6 }}>Handyman settings</h2>
             <p className="muted" style={{ marginTop: 0 }}>
-              Marketplace matching uses your ZIP + selected skills. Availability is a simple toggle for v1.
+              Marketplace matching uses your Country + State + LGA + selected skills. Availability is a simple toggle for v1.
             </p>
 
             {state === 'error' ? <InlineNotice kind="error">Unable to load settings.</InlineNotice> : null}
@@ -63,24 +75,7 @@ export default function ProviderSettings() {
 
             {state === 'ready' ? (
               <div className="col" style={{ marginTop: 12 }}>
-                <label style={{ display: 'grid', gap: 6 }}>
-                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>ZIP</span>
-                  <input
-                    value={zip}
-                    onChange={e => setZip(e.target.value)}
-                    inputMode="numeric"
-                    placeholder="e.g. 10001"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: 12,
-                      border: '1px solid rgba(255,255,255,0.14)',
-                      background: 'rgba(0,0,0,0.18)',
-                      color: 'rgba(255,255,255,0.92)',
-                      outline: 'none',
-                    }}
-                  />
-                </label>
+                <NigeriaLocationSelect value={location} onChange={setLocation} showStreet={false} />
 
                 <label className="row" style={{ justifyContent: 'space-between' }}>
                   <span className="muted">Available to take jobs</span>
@@ -153,7 +148,7 @@ export default function ProviderSettings() {
             </div>
             <ol className="muted" style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 8 }}>
               <li>Order must be unassigned and “requested”</li>
-              <li>Order ZIP must match your ZIP</li>
+              <li>Order Country + State + LGA must match your profile</li>
               <li>Order service must be one of your skills</li>
               <li>If you’re unavailable, you’ll see no jobs</li>
             </ol>
@@ -163,4 +158,3 @@ export default function ProviderSettings() {
     </Layout>
   );
 }
-

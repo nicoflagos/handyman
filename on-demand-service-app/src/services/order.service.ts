@@ -7,7 +7,9 @@ type CreateOrderInput = {
   title: string;
   description?: string;
   address?: string;
-  zip: string;
+  country: string;
+  state: string;
+  lga: string;
   scheduledAt?: Date;
 };
 
@@ -19,7 +21,9 @@ export class OrderService {
       title: input.title,
       description: input.description,
       address: input.address,
-      zip: input.zip,
+      country: input.country,
+      state: input.state,
+      lga: input.lga,
       scheduledAt: input.scheduledAt,
       status: 'requested',
       timeline: [{ status: 'requested', at: new Date(), by: input.customerId }],
@@ -43,9 +47,11 @@ export class OrderService {
     return Order.find({ customerId: opts.userId }).sort({ createdAt: -1 }).limit(100).exec();
   }
 
-  async listMarketplace(opts: { limit?: number; zip?: string; serviceKeys?: string[] }) {
+  async listMarketplace(opts: { limit?: number; country?: string; state?: string; lga?: string; serviceKeys?: string[] }) {
     const query: any = { status: 'requested', providerId: { $exists: false } };
-    if (opts.zip) query.zip = opts.zip;
+    if (opts.country) query.country = opts.country;
+    if (opts.state) query.state = opts.state;
+    if (opts.lga) query.lga = opts.lga;
     if (opts.serviceKeys && opts.serviceKeys.length > 0) query.serviceKey = { $in: opts.serviceKeys };
 
     return Order.find(query)
