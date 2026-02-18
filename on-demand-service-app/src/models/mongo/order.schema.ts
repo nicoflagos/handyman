@@ -21,6 +21,11 @@ export interface IOrderDocument extends Document {
   country: string;
   state: string;
   lga: string;
+  verificationCode?: string;
+  verificationVerifiedAt?: Date;
+  verificationVerifiedBy?: Types.ObjectId;
+  customerRating?: { stars: number; note?: string; at: Date };
+  handymanRating?: { stars: number; note?: string; at: Date };
   scheduledAt?: Date;
   status: OrderStatus;
   timeline: OrderTimelineEvent[];
@@ -40,6 +45,25 @@ const OrderSchema = new Schema<IOrderDocument>(
     country: { type: String, required: true, trim: true, index: true },
     state: { type: String, required: true, trim: true, index: true },
     lga: { type: String, required: true, trim: true, index: true },
+    verificationCode: { type: String, required: false, trim: true, index: false },
+    verificationVerifiedAt: { type: Date, required: false },
+    verificationVerifiedBy: { type: Schema.Types.ObjectId, ref: 'User', required: false },
+    customerRating: {
+      type: {
+        stars: { type: Number, required: true, min: 1, max: 5 },
+        note: { type: String, required: false },
+        at: { type: Date, required: true },
+      },
+      required: false,
+    },
+    handymanRating: {
+      type: {
+        stars: { type: Number, required: true, min: 1, max: 5 },
+        note: { type: String, required: false },
+        at: { type: Date, required: true },
+      },
+      required: false,
+    },
     scheduledAt: { type: Date },
     status: {
       type: String,

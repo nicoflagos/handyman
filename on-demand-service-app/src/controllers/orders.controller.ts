@@ -9,13 +9,20 @@ type AuthRequest = Request & { userId?: string };
 export class OrdersController {
   constructor(private orderService: OrderService, private userService: UserService) {}
 
+  private toSafeOrder(order: any, opts: { includeVerificationCode: boolean }) {
+    const plain = order?.toObject ? order.toObject() : order;
+    if (!opts.includeVerificationCode) delete plain.verificationCode;
+    return plain;
+  }
+
   async listMyOrders(req: AuthRequest, res: Response) {
     try {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
       const userObjectId = new Types.ObjectId(req.userId);
       const role = await this.userService.getRole(userObjectId);
       const orders = await this.orderService.listForUser({ userId: userObjectId, role });
-      return res.status(200).json(orders);
+      const safe = orders.map(o => this.toSafeOrder(o, { includeVerificationCode: false }));
+      return res.status(200).json(safe);
     } catch (error) {
       return res.status(500).json({ message: 'Error listing orders', error });
     }
@@ -73,7 +80,7 @@ export class OrdersController {
         lga,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
       });
-      return res.status(201).json(order);
+      return res.status(201).json(this.toSafeOrder(order, { includeVerificationCode: true }));
     } catch (error) {
       return res.status(500).json({ message: 'Error creating order', error });
     }
@@ -90,6 +97,7 @@ export class OrdersController {
       const role = await this.userService.getRole(viewerId);
       const isCustomer = order.customerId?.toString() === req.userId;
       const isProvider = order.providerId?.toString() === req.userId;
+      const includeVerificationCode = role === 'admin' || isCustomer;
       if (!(role === 'admin' || isCustomer || isProvider)) {
         // Allow providers to view *unassigned* requested orders that match their profile,
         // so they can review details before accepting.
@@ -108,14 +116,14 @@ export class OrdersController {
             profile.skills.includes(order.serviceKey);
 
           if (matches) {
-            return res.status(200).json(order);
+            return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
           }
         }
 
         return res.status(403).json({ message: 'Forbidden' });
       }
 
-      return res.status(200).json(order);
+      return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode }));
     } catch (error) {
       return res.status(500).json({ message: 'Error retrieving order', error });
     }
@@ -141,7 +149,7 @@ export class OrdersController {
   async setStatus(req: AuthRequest, res: Response) {
     try {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
-      const { status, note } = req.body || {};
+      const { status, note, verificationCode } = req.body || {};
       if (!status) return res.status(400).json({ message: 'status is required' });
 
       const order = await this.orderService.getById(req.params.id);
@@ -169,6 +177,23 @@ export class OrdersController {
 
       if (!allowed) return res.status(403).json({ message: 'Forbidden' });
 
+      // Verification: handyman must enter the customer's code to start (accepted -> in_progress).
+      if (role === 'provider' && nextStatus === 'in_progress') {
+        if (order.status !== 'accepted') {
+          return res.status(400).json({ message: 'Order must be accepted before starting' });
+        }
+        if ((order as any).verificationCode && !order.verificationVerifiedAt) {
+          const code = String(verificationCode || '').trim();
+          if (!code) return res.status(400).json({ message: 'verificationCode is required to start this job' });
+          if (code !== (order as any).verificationCode) {
+            return res.status(400).json({ message: 'Invalid verification code' });
+          }
+          (order as any).verificationVerifiedAt = new Date();
+          (order as any).verificationVerifiedBy = actorId;
+          await (order as any).save();
+        }
+      }
+
       const updated = await this.orderService.setStatus({
         orderId: req.params.id,
         status: nextStatus,
@@ -178,6 +203,59 @@ export class OrdersController {
       return res.status(200).json(updated);
     } catch (error) {
       return res.status(500).json({ message: 'Error updating order status', error });
+    }
+  }
+
+  async rateOrder(req: AuthRequest, res: Response) {
+    try {
+      if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+      const { stars, note } = req.body || {};
+      const nStars = Number(stars);
+      if (!Number.isFinite(nStars) || nStars < 1 || nStars > 5) {
+        return res.status(400).json({ message: 'stars must be a number between 1 and 5' });
+      }
+
+      const order = await this.orderService.getById(req.params.id);
+      if (!order) return res.status(404).json({ message: 'Order not found' });
+      if (order.status !== 'completed') return res.status(400).json({ message: 'Order must be completed before rating' });
+      if (!order.providerId) return res.status(400).json({ message: 'Order has no assigned handyman yet' });
+
+      const actorId = new Types.ObjectId(req.userId);
+      const role = await this.userService.getRole(actorId);
+      if (role !== 'customer' && role !== 'provider') return res.status(403).json({ message: 'Forbidden' });
+
+      const isCustomer = order.customerId?.toString() === req.userId;
+      const isProvider = order.providerId?.toString() === req.userId;
+      if (role === 'customer' && !isCustomer) return res.status(403).json({ message: 'Forbidden' });
+      if (role === 'provider' && !isProvider) return res.status(403).json({ message: 'Forbidden' });
+
+      const cleanNote = typeof note === 'string' ? note.trim().slice(0, 500) : undefined;
+      const now = new Date();
+
+      if (role === 'customer') {
+        if ((order as any).customerRating) return res.status(400).json({ message: 'You already rated this handyman' });
+        (order as any).customerRating = { stars: Math.round(nStars), note: cleanNote || undefined, at: now };
+        await (order as any).save();
+        await this.userService.applyRating({
+          userId: new Types.ObjectId(order.providerId as any),
+          kind: 'asHandyman',
+          stars: Math.round(nStars),
+        });
+        return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: true }));
+      }
+
+      // role === 'provider'
+      if ((order as any).handymanRating) return res.status(400).json({ message: 'You already rated this customer' });
+      (order as any).handymanRating = { stars: Math.round(nStars), note: cleanNote || undefined, at: now };
+      await (order as any).save();
+      await this.userService.applyRating({
+        userId: new Types.ObjectId(order.customerId as any),
+        kind: 'asCustomer',
+        stars: Math.round(nStars),
+      });
+      return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
+    } catch (error) {
+      return res.status(500).json({ message: 'Error rating order', error });
     }
   }
 }

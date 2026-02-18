@@ -46,4 +46,31 @@ export class UserService {
     if (typeof input.availabilityNote === 'string') update['providerProfile.availabilityNote'] = input.availabilityNote;
     return User.findByIdAndUpdate(userId, { $set: update }, { new: true }).select('-password').exec();
   }
+
+  async applyRating(opts: { userId: Types.ObjectId; kind: 'asCustomer' | 'asHandyman'; stars: number }) {
+    const user = await User.findById(opts.userId)
+      .select('ratingAsCustomerAvg ratingAsCustomerCount ratingAsHandymanAvg ratingAsHandymanCount')
+      .exec();
+    if (!user) return null;
+
+    const stars = Math.max(1, Math.min(5, Math.round(opts.stars)));
+    if (opts.kind === 'asCustomer') {
+      const count = Number((user as any).ratingAsCustomerCount || 0);
+      const avg = Number((user as any).ratingAsCustomerAvg || 0);
+      const nextCount = count + 1;
+      const nextAvg = (avg * count + stars) / nextCount;
+      (user as any).ratingAsCustomerCount = nextCount;
+      (user as any).ratingAsCustomerAvg = nextAvg;
+    } else {
+      const count = Number((user as any).ratingAsHandymanCount || 0);
+      const avg = Number((user as any).ratingAsHandymanAvg || 0);
+      const nextCount = count + 1;
+      const nextAvg = (avg * count + stars) / nextCount;
+      (user as any).ratingAsHandymanCount = nextCount;
+      (user as any).ratingAsHandymanAvg = nextAvg;
+    }
+
+    await (user as any).save();
+    return user as any;
+  }
 }

@@ -9,6 +9,12 @@ export type OrderTimelineEvent = {
   note?: string;
 };
 
+export type OrderRating = {
+  stars: number;
+  note?: string;
+  at: string;
+};
+
 export type Order = {
   _id: string;
   customerId: string;
@@ -20,6 +26,10 @@ export type Order = {
   country: string;
   state: string;
   lga: string;
+  verificationCode?: string;
+  verificationVerifiedAt?: string;
+  customerRating?: OrderRating;
+  handymanRating?: OrderRating;
   scheduledAt?: string;
   status: OrderStatus;
   timeline: OrderTimelineEvent[];
@@ -61,7 +71,17 @@ export async function acceptOrder(orderId: string): Promise<Order> {
   return res.data as Order;
 }
 
-export async function setOrderStatus(orderId: string, status: OrderStatus, note?: string): Promise<Order> {
-  const res = await apiClient.post(`/orders/${orderId}/status`, { status, note });
+export async function setOrderStatus(
+  orderId: string,
+  status: OrderStatus,
+  note?: string,
+  verificationCode?: string,
+): Promise<Order> {
+  const res = await apiClient.post(`/orders/${orderId}/status`, { status, note, verificationCode });
+  return res.data as Order;
+}
+
+export async function rateOrder(orderId: string, input: { stars: number; note?: string }): Promise<Order> {
+  const res = await apiClient.post(`/orders/${orderId}/rate`, input);
   return res.data as Order;
 }

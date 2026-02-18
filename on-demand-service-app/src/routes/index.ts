@@ -35,6 +35,7 @@ router.post('/orders', authMiddleware, (req, res) => ordersController.createOrde
 router.get('/orders/:id', authMiddleware, (req, res) => ordersController.getOrder(req as any, res));
 router.post('/orders/:id/accept', authMiddleware, (req, res) => ordersController.acceptOrder(req as any, res));
 router.post('/orders/:id/status', authMiddleware, (req, res) => ordersController.setStatus(req as any, res));
+router.post('/orders/:id/rate', authMiddleware, (req, res) => ordersController.rateOrder(req as any, res));
 
 export function setRoutes(app: Express) {
   app.use('/api', router);

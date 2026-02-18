@@ -20,6 +20,10 @@ interface IUserDocument extends Document {
   password: string;
   role: UserRole;
   providerProfile?: ProviderProfile;
+  ratingAsCustomerAvg?: number;
+  ratingAsCustomerCount?: number;
+  ratingAsHandymanAvg?: number;
+  ratingAsHandymanCount?: number;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(password: string): Promise<boolean>;
@@ -39,6 +43,10 @@ const UserSchema = new Schema<IUserDocument>({
     available: { type: Boolean, default: true },
     availabilityNote: { type: String, required: false },
   },
+  ratingAsCustomerAvg: { type: Number, default: 0 },
+  ratingAsCustomerCount: { type: Number, default: 0 },
+  ratingAsHandymanAvg: { type: Number, default: 0 },
+  ratingAsHandymanCount: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

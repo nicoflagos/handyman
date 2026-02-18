@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { Order, OrderStatus } from '../models/mongo/order.schema';
+import crypto from 'crypto';
 
 type CreateOrderInput = {
   customerId: Types.ObjectId;
@@ -15,6 +16,7 @@ type CreateOrderInput = {
 
 export class OrderService {
   async createOrder(input: CreateOrderInput) {
+    const verificationCode = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
     const order = new Order({
       customerId: input.customerId,
       serviceKey: input.serviceKey,
@@ -24,6 +26,7 @@ export class OrderService {
       country: input.country,
       state: input.state,
       lga: input.lga,
+      verificationCode,
       scheduledAt: input.scheduledAt,
       status: 'requested',
       timeline: [{ status: 'requested', at: new Date(), by: input.customerId }],

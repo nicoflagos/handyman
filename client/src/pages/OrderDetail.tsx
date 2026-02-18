@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Layout } from '../components/Layout';
-import { acceptOrder, getOrder, Order, OrderStatus, setOrderStatus } from '../services/orders';
+import { acceptOrder, getOrder, Order, OrderStatus, rateOrder, setOrderStatus } from '../services/orders';
 import { InlineNotice } from '../ui/Toast';
 import { Button } from '../ui/Button';
 import { Link, useParams } from 'react-router-dom';
@@ -35,8 +35,13 @@ export default function OrderDetail() {
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [ratingStars, setRatingStars] = useState(5);
+  const [ratingNote, setRatingNote] = useState('');
+  const [ratingBusy, setRatingBusy] = useState(false);
 
   const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
+  const isCustomer = auth.claims?.role === 'customer';
 
   useEffect(() => {
     if (!id) return;
@@ -68,6 +73,21 @@ export default function OrderDetail() {
       setError(err?.response?.data?.message || 'Action failed');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function submitRating() {
+    if (!order) return;
+    setError(null);
+    setRatingBusy(true);
+    try {
+      const updated = await rateOrder(order._id, { stars: ratingStars, note: ratingNote || undefined });
+      setOrder(updated);
+      setRatingNote('');
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Unable to submit rating');
+    } finally {
+      setRatingBusy(false);
     }
   }
 
@@ -111,7 +131,10 @@ export default function OrderDetail() {
                       </Button>
                     ) : null}
                     {isProvider && order.status === 'accepted' ? (
-                      <Button loading={busy} onClick={() => run(() => setOrderStatus(order._id, 'in_progress'))}>
+                      <Button
+                        loading={busy}
+                        onClick={() => run(() => setOrderStatus(order._id, 'in_progress', undefined, verificationCode))}
+                      >
                         Start
                       </Button>
                     ) : null}
@@ -139,7 +162,155 @@ export default function OrderDetail() {
                   <span className="pill">Service: {order.serviceKey}</span>
                   {order.address ? <span className="pill">Address: {order.address}</span> : null}
                   {order.scheduledAt ? <span className="pill">When: {formatDate(order.scheduledAt)}</span> : null}
+                  {isCustomer && order.verificationCode ? (
+                    <span className="pill">Verification code: {order.verificationCode}</span>
+                  ) : null}
                 </div>
+
+                {isProvider && order.status === 'accepted' ? (
+                  <div style={{ marginTop: 12 }}>
+                    <label style={{ display: 'grid', gap: 6 }}>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Customer verification code</span>
+                      <input
+                        value={verificationCode}
+                        onChange={e => setVerificationCode(e.target.value)}
+                        inputMode="numeric"
+                        placeholder="Enter 6-digit code"
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: 12,
+                          border: '1px solid rgba(255,255,255,0.14)',
+                          background: 'rgba(0,0,0,0.18)',
+                          color: 'rgba(255,255,255,0.92)',
+                          outline: 'none',
+                        }}
+                      />
+                    </label>
+                  </div>
+                ) : null}
+
+                {order.status === 'completed' ? (
+                  <div style={{ marginTop: 14 }}>
+                    <div className="pill" style={{ marginBottom: 10 }}>
+                      Rating
+                    </div>
+
+                    {isCustomer ? (
+                      order.customerRating ? (
+                        <span className="muted">
+                          You rated this handyman {order.customerRating.stars}/5
+                          {order.customerRating.note ? ` — “${order.customerRating.note}”` : ''}.
+                        </span>
+                      ) : (
+                        <div className="col" style={{ gap: 10 }}>
+                          <label style={{ display: 'grid', gap: 6 }}>
+                            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Rate your handyman</span>
+                            <select
+                              value={ratingStars}
+                              onChange={e => setRatingStars(Number(e.target.value))}
+                              style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                borderRadius: 12,
+                                border: '1px solid rgba(255,255,255,0.14)',
+                                background: 'rgba(0,0,0,0.18)',
+                                color: 'rgba(255,255,255,0.92)',
+                                outline: 'none',
+                              }}
+                            >
+                              {[5, 4, 3, 2, 1].map(n => (
+                                <option key={n} value={n}>
+                                  {n}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label style={{ display: 'grid', gap: 6 }}>
+                            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Note (optional)</span>
+                            <textarea
+                              value={ratingNote}
+                              onChange={e => setRatingNote(e.target.value)}
+                              rows={3}
+                              placeholder="Share feedback (optional)"
+                              style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                borderRadius: 12,
+                                border: '1px solid rgba(255,255,255,0.14)',
+                                background: 'rgba(0,0,0,0.18)',
+                                color: 'rgba(255,255,255,0.92)',
+                                outline: 'none',
+                                resize: 'vertical',
+                              }}
+                            />
+                          </label>
+                          <div className="row" style={{ justifyContent: 'flex-end' }}>
+                            <Button loading={ratingBusy} onClick={submitRating}>
+                              Submit rating
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    ) : isProvider ? (
+                      order.handymanRating ? (
+                        <span className="muted">
+                          You rated this customer {order.handymanRating.stars}/5
+                          {order.handymanRating.note ? ` — “${order.handymanRating.note}”` : ''}.
+                        </span>
+                      ) : (
+                        <div className="col" style={{ gap: 10 }}>
+                          <label style={{ display: 'grid', gap: 6 }}>
+                            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Rate the customer</span>
+                            <select
+                              value={ratingStars}
+                              onChange={e => setRatingStars(Number(e.target.value))}
+                              style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                borderRadius: 12,
+                                border: '1px solid rgba(255,255,255,0.14)',
+                                background: 'rgba(0,0,0,0.18)',
+                                color: 'rgba(255,255,255,0.92)',
+                                outline: 'none',
+                              }}
+                            >
+                              {[5, 4, 3, 2, 1].map(n => (
+                                <option key={n} value={n}>
+                                  {n}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label style={{ display: 'grid', gap: 6 }}>
+                            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Note (optional)</span>
+                            <textarea
+                              value={ratingNote}
+                              onChange={e => setRatingNote(e.target.value)}
+                              rows={3}
+                              placeholder="Share feedback (optional)"
+                              style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                borderRadius: 12,
+                                border: '1px solid rgba(255,255,255,0.14)',
+                                background: 'rgba(0,0,0,0.18)',
+                                color: 'rgba(255,255,255,0.92)',
+                                outline: 'none',
+                                resize: 'vertical',
+                              }}
+                            />
+                          </label>
+                          <div className="row" style={{ justifyContent: 'flex-end' }}>
+                            <Button loading={ratingBusy} onClick={submitRating}>
+                              Submit rating
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -176,4 +347,3 @@ export default function OrderDetail() {
     </Layout>
   );
 }
-
