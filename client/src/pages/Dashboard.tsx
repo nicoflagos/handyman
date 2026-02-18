@@ -90,6 +90,11 @@ export default function Dashboard() {
                 <p className="muted" style={{ marginTop: 0 }}>
                   Accept a job to move it to your assigned list.
                 </p>
+                {auth.claims?.role === 'provider' ? (
+                  <Link to="/provider/settings" style={{ textDecoration: 'none' }}>
+                    <Button variant="ghost">Provider settings</Button>
+                  </Link>
+                ) : null}
                 <div className="col" style={{ gap: 10 }}>
                   {market.map(o => (
                     <Link key={o._id} to={`/orders/${o._id}`} style={{ textDecoration: 'none' }}>

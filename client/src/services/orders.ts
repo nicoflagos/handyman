@@ -17,6 +17,7 @@ export type Order = {
   title: string;
   description?: string;
   address?: string;
+  zip: string;
   scheduledAt?: string;
   status: OrderStatus;
   timeline: OrderTimelineEvent[];
@@ -29,6 +30,7 @@ export async function createOrder(input: {
   title: string;
   description?: string;
   address?: string;
+  zip: string;
   scheduledAt?: string;
 }): Promise<Order> {
   const res = await apiClient.post('/orders', input);
@@ -59,4 +61,3 @@ export async function setOrderStatus(orderId: string, status: OrderStatus, note?
   const res = await apiClient.post(`/orders/${orderId}/status`, { status, note });
   return res.data as Order;
 }
-

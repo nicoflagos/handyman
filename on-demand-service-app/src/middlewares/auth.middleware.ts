@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import config from '../config';
 
-type AuthRequest = Request & { userId?: string };
+type AuthRequest = Request & { userId?: string; role?: 'customer' | 'provider' | 'admin' };
 
 type JwtPayload = {
     userId?: string;
@@ -23,6 +23,7 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
 
         const payload = decoded as JwtPayload;
         req.userId = payload.userId;
+        req.role = payload.role;
         return next();
     });
 };

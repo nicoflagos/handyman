@@ -24,6 +24,7 @@ export default function CreateOrder() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
+  const [zip, setZip] = useState('');
   const [scheduledAt, setScheduledAt] = useState('');
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function CreateOrder() {
         title: title || `Request: ${serviceKey}`,
         description: description || undefined,
         address: address || undefined,
+        zip,
         scheduledAt: scheduledAt || undefined,
       });
       navigate(`/orders/${order._id}`, { replace: true });
@@ -117,6 +119,14 @@ export default function CreateOrder() {
               </label>
               <Input label="Address" value={address} onChange={e => setAddress(e.target.value)} placeholder="Street, City" />
               <Input
+                label="ZIP"
+                value={zip}
+                onChange={e => setZip(e.target.value)}
+                inputMode="numeric"
+                placeholder="e.g. 10001"
+                hint="ZIP is required for provider matching."
+              />
+              <Input
                 label="Preferred date/time"
                 value={scheduledAt}
                 onChange={e => setScheduledAt(e.target.value)}
@@ -153,4 +163,3 @@ export default function CreateOrder() {
     </Layout>
   );
 }
-

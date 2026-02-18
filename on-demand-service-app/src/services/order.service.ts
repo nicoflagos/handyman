@@ -7,6 +7,7 @@ type CreateOrderInput = {
   title: string;
   description?: string;
   address?: string;
+  zip: string;
   scheduledAt?: Date;
 };
 
@@ -18,6 +19,7 @@ export class OrderService {
       title: input.title,
       description: input.description,
       address: input.address,
+      zip: input.zip,
       scheduledAt: input.scheduledAt,
       status: 'requested',
       timeline: [{ status: 'requested', at: new Date(), by: input.customerId }],
@@ -41,8 +43,12 @@ export class OrderService {
     return Order.find({ customerId: opts.userId }).sort({ createdAt: -1 }).limit(100).exec();
   }
 
-  async listMarketplace(opts: { limit?: number }) {
-    return Order.find({ status: 'requested', providerId: { $exists: false } })
+  async listMarketplace(opts: { limit?: number; zip?: string; serviceKeys?: string[] }) {
+    const query: any = { status: 'requested', providerId: { $exists: false } };
+    if (opts.zip) query.zip = opts.zip;
+    if (opts.serviceKeys && opts.serviceKeys.length > 0) query.serviceKey = { $in: opts.serviceKeys };
+
+    return Order.find(query)
       .sort({ createdAt: -1 })
       .limit(opts.limit ?? 50)
       .exec();
@@ -73,4 +79,3 @@ export class OrderService {
     return order;
   }
 }
-

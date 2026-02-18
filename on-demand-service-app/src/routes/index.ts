@@ -23,6 +23,8 @@ router.post('/auth/register', (req, res) => authController.register(req, res));
 router.get('/services', (req, res) => servicesController.list(req, res));
 
 // User routes
+router.get('/me', authMiddleware, (req, res) => userController.getMe(req as any, res));
+router.put('/providers/me', authMiddleware, (req, res) => userController.updateProviderProfile(req as any, res));
 router.get('/users/:id', authMiddleware, (req, res) => userController.getUserProfile(req, res));
 router.put('/users/:id', authMiddleware, (req, res) => userController.updateUserProfile(req, res));
 

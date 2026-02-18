@@ -10,6 +10,7 @@ import Services from './pages/Services';
 import CreateOrder from './pages/CreateOrder';
 import OrderDetail from './pages/OrderDetail';
 import Admin from './pages/Admin';
+import ProviderSettings from './pages/ProviderSettings';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
@@ -76,6 +77,14 @@ export default function App() {
             element={
               <RequireRole role="admin">
                 <Admin />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/provider/settings"
+            element={
+              <RequireRole role="provider">
+                <ProviderSettings />
               </RequireRole>
             }
           />

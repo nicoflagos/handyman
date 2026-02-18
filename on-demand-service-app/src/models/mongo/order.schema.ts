@@ -16,6 +16,7 @@ export interface IOrderDocument extends Document {
   title: string;
   description?: string;
   address?: string;
+  zip: string;
   scheduledAt?: Date;
   status: OrderStatus;
   timeline: OrderTimelineEvent[];
@@ -31,6 +32,7 @@ const OrderSchema = new Schema<IOrderDocument>(
     title: { type: String, required: true },
     description: { type: String },
     address: { type: String },
+    zip: { type: String, required: true, trim: true, index: true },
     scheduledAt: { type: Date },
     status: {
       type: String,
@@ -54,4 +56,3 @@ const OrderSchema = new Schema<IOrderDocument>(
 );
 
 export const Order = model<IOrderDocument>('Order', OrderSchema);
-

@@ -24,9 +24,25 @@ export class OrdersController {
   async listMarketplace(req: AuthRequest, res: Response) {
     try {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
-      const role = await this.userService.getRole(new Types.ObjectId(req.userId));
+      const providerId = new Types.ObjectId(req.userId);
+      const role = await this.userService.getRole(providerId);
       if (role !== 'provider' && role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
-      const orders = await this.orderService.listMarketplace({ limit: 50 });
+
+      const provider = await this.userService.getProviderProfile(providerId);
+      const profile = provider?.providerProfile;
+      if (!profile?.available) return res.status(200).json([]);
+      if (!profile?.zip) {
+        return res.status(400).json({ message: 'Set your provider ZIP before browsing the marketplace' });
+      }
+      if (!Array.isArray(profile.skills) || profile.skills.length === 0) {
+        return res.status(400).json({ message: 'Select at least one skill before browsing the marketplace' });
+      }
+
+      const orders = await this.orderService.listMarketplace({
+        limit: 50,
+        zip: profile.zip,
+        serviceKeys: profile.skills,
+      });
       return res.status(200).json(orders);
     } catch (error) {
       return res.status(500).json({ message: 'Error listing marketplace orders', error });
@@ -36,9 +52,9 @@ export class OrdersController {
   async createOrder(req: AuthRequest, res: Response) {
     try {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
-      const { serviceKey, title, description, address, scheduledAt } = req.body || {};
-      if (!serviceKey || !title) {
-        return res.status(400).json({ message: 'serviceKey and title are required' });
+      const { serviceKey, title, description, address, scheduledAt, zip } = req.body || {};
+      if (!serviceKey || !title || !zip) {
+        return res.status(400).json({ message: 'serviceKey, title, and zip are required' });
       }
 
       const customerId = new Types.ObjectId(req.userId);
@@ -48,6 +64,7 @@ export class OrdersController {
         title,
         description,
         address,
+        zip,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
       });
       return res.status(201).json(order);
@@ -137,4 +154,3 @@ export class OrdersController {
     }
   }
 }
-
