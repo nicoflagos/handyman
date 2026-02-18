@@ -25,6 +25,19 @@ function RequireRole({ role, children }: { role: 'admin' | 'provider' | 'custome
   return <>{children}</>;
 }
 
+function RequireAnyRole({
+  roles,
+  children,
+}: {
+  roles: Array<'admin' | 'provider' | 'customer'>;
+  children: React.ReactNode;
+}) {
+  const auth = useAuth();
+  if (!auth.token) return <Navigate to="/login" replace />;
+  if (!auth.claims?.role || !roles.includes(auth.claims.role)) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -51,17 +64,17 @@ export default function App() {
           <Route
             path="/services"
             element={
-              <RequireAuth>
+              <RequireAnyRole roles={['customer', 'admin']}>
                 <Services />
-              </RequireAuth>
+              </RequireAnyRole>
             }
           />
           <Route
             path="/orders/new"
             element={
-              <RequireAuth>
+              <RequireAnyRole roles={['customer', 'admin']}>
                 <CreateOrder />
-              </RequireAuth>
+              </RequireAnyRole>
             }
           />
           <Route

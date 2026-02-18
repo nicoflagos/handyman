@@ -52,6 +52,8 @@ export class OrdersController {
   async createOrder(req: AuthRequest, res: Response) {
     try {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+      const role = await this.userService.getRole(new Types.ObjectId(req.userId));
+      if (role === 'provider') return res.status(403).json({ message: 'Providers cannot create orders' });
       const { serviceKey, title, description, address, scheduledAt, zip } = req.body || {};
       if (!serviceKey || !title || !zip) {
         return res.status(400).json({ message: 'serviceKey, title, and zip are required' });

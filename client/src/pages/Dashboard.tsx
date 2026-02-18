@@ -36,9 +36,11 @@ export default function Dashboard() {
             </p>
 
             <div className="row" style={{ flexWrap: 'wrap', marginTop: 12 }}>
-              <Link to="/services" style={{ textDecoration: 'none' }}>
-                <Button>Book a service</Button>
-              </Link>
+              {auth.claims?.role !== 'provider' ? (
+                <Link to="/services" style={{ textDecoration: 'none' }}>
+                  <Button>Book a service</Button>
+                </Link>
+              ) : null}
               <Button variant="danger" onClick={auth.logout}>
                 Logout
               </Button>
