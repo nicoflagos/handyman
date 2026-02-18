@@ -26,11 +26,20 @@ const controlStyle: React.CSSProperties = {
 };
 
 export function NigeriaLocationSelect({ value, onChange, showStreet = true }: NigeriaLocationSelectProps) {
-  const stateOptions = useMemo(() => NaijaStates.states().map(s => s.state).sort((a, b) => a.localeCompare(b)), []);
+  const stateOptions = useMemo(() => {
+    const states = NaijaStates.states();
+    return (Array.isArray(states) ? states : []).slice().sort((a, b) => a.localeCompare(b));
+  }, []);
 
   const lgaOptions = useMemo(() => {
     if (!value.state) return [];
-    return NaijaStates.lgas(value.state).slice().sort((a, b) => a.localeCompare(b));
+    try {
+      const res = NaijaStates.lgas(value.state) as any;
+      const lgas = (res && Array.isArray(res.lgas) ? res.lgas : []) as string[];
+      return lgas.slice().sort((a, b) => a.localeCompare(b));
+    } catch {
+      return [];
+    }
   }, [value.state]);
 
   return (

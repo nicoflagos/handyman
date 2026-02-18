@@ -38,7 +38,7 @@ export class AuthService {
             throw new Error('Invalid email or password');
         }
         const token = jwt.sign(
-            { userId: user._id, email: user.email, role: (user as any).role },
+            { userId: user._id, email: user.email, username: (user as any).username, role: (user as any).role },
             config.jwtSecret,
             { expiresIn: '24h' },
         );

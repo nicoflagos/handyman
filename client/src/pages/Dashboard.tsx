@@ -32,7 +32,7 @@ export default function Dashboard() {
           <div className="cardInner">
             <h2 style={{ marginTop: 0, marginBottom: 6 }}>Dashboard</h2>
             <p className="muted" style={{ marginTop: 0 }}>
-              Signed in as <strong>{auth.claims?.email || 'unknown'}</strong>
+              Welcome, <strong>{auth.claims?.username || auth.claims?.email || 'there'}</strong>
             </p>
 
             <div className="row" style={{ flexWrap: 'wrap', marginTop: 12 }}>
