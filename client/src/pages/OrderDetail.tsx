@@ -57,6 +57,34 @@ export default function OrderDetail() {
       });
   }, [id]);
 
+  // Auto-refresh order details so status/timeline updates without a hard refresh.
+  useEffect(() => {
+    if (!id) return;
+    if (state !== 'ready') return;
+    const intervalMs = 5000;
+
+    let stopped = false;
+    const tick = async () => {
+      if (stopped) return;
+      if (busy || ratingBusy) return;
+      try {
+        const latest = await getOrder(id);
+        setOrder(latest);
+      } catch {
+        // ignore transient polling errors
+      }
+    };
+
+    const handle = setInterval(tick, intervalMs);
+    // Also refresh once shortly after mount/ready.
+    const timeout = setTimeout(tick, 800);
+    return () => {
+      stopped = true;
+      clearInterval(handle);
+      clearTimeout(timeout);
+    };
+  }, [busy, id, ratingBusy, state]);
+
   const timeline = useMemo(() => {
     const items = order?.timeline || [];
     return [...items].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());

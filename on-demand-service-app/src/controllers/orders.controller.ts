@@ -25,10 +25,29 @@ export class OrdersController {
     const isAdmin = viewer.role === 'admin';
     if (!(isAdmin || isCustomer || isHandyman)) return plain;
 
-    const customer = await this.userService.getPublicProfile(new Types.ObjectId(String(plain.customerId)));
-    const handyman = await this.userService.getPublicProfile(new Types.ObjectId(String(plain.providerId)));
-    plain.customerInfo = customer;
-    plain.handymanInfo = handyman;
+    if (isAdmin) {
+      const customer = await this.userService.getPublicProfile(new Types.ObjectId(String(plain.customerId)));
+      const handyman = await this.userService.getPublicProfile(new Types.ObjectId(String(plain.providerId)));
+      plain.customerInfo = customer;
+      plain.handymanInfo = handyman;
+      return plain;
+    }
+
+    // Only share the *other party's* contact info:
+    // - customer sees handyman
+    // - handyman sees customer
+    if (isCustomer) {
+      const handyman = await this.userService.getPublicProfile(new Types.ObjectId(String(plain.providerId)));
+      plain.handymanInfo = handyman;
+      return plain;
+    }
+
+    if (isHandyman) {
+      const customer = await this.userService.getPublicProfile(new Types.ObjectId(String(plain.customerId)));
+      plain.customerInfo = customer;
+      return plain;
+    }
+
     return plain;
   }
 
