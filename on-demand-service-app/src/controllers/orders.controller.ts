@@ -442,21 +442,36 @@ export class OrdersController {
       const jobFee = Number(order.escrowJobAmount || order.price || 0);
       if (!Number.isFinite(jobFee) || jobFee <= 0) return res.status(400).json({ message: 'Order price is invalid' });
 
+      const commission = Math.round(jobFee * 0.1);
+      const payout = jobFee - commission;
+      if (payout < 0) return res.status(400).json({ message: 'Order payout is invalid' });
+
       const handyman: any = await this.userService.getById(String(order.providerId));
       if (!handyman) return res.status(400).json({ message: 'Handyman not found' });
       if (typeof handyman.walletBalance !== 'number') handyman.walletBalance = 100000;
-      handyman.walletBalance += jobFee;
+      handyman.walletBalance += payout;
       await handyman.save();
 
-      await Transaction.create({
-        userId: new Types.ObjectId(String(order.providerId)),
-        direction: 'in',
-        type: 'order_payout',
-        amount: jobFee,
-        currency: 'NGN',
-        ref: `order:${order._id}`,
-        meta: { orderId: String(order._id) },
-      });
+      await Transaction.create([
+        {
+          userId: new Types.ObjectId(String(order.providerId)),
+          direction: 'in',
+          type: 'order_payout',
+          amount: payout,
+          currency: 'NGN',
+          ref: `order:${order._id}`,
+          meta: { orderId: String(order._id), gross: jobFee, commission },
+        },
+        {
+          userId: new Types.ObjectId(String(order.providerId)),
+          direction: 'out',
+          type: 'platform_fee',
+          amount: commission,
+          currency: 'NGN',
+          ref: `order:${order._id}`,
+          meta: { orderId: String(order._id) },
+        },
+      ]);
 
       order.escrowReleasedAt = new Date();
       order.status = 'completed';

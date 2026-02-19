@@ -35,6 +35,38 @@ export default function Dashboard() {
       .catch(() => setState('error'));
   }, [isProvider]);
 
+  // Marketplace listeners (polling): keep jobs list fresh for handymen.
+  React.useEffect(() => {
+    if (!isProvider) return;
+    if (state !== 'ready') return;
+    const intervalMs = 5000;
+
+    let stopped = false;
+    const tick = async () => {
+      if (stopped) return;
+      try {
+        const [my, m, txRes] = await Promise.all([
+          listMyOrders(),
+          listMarketplaceOrders(),
+          listMyTransactions().catch(() => [] as Transaction[]),
+        ]);
+        setOrders(my);
+        setMarket(m);
+        setTx(txRes);
+      } catch {
+        // ignore transient errors
+      }
+    };
+
+    const handle = setInterval(tick, intervalMs);
+    const timeout = setTimeout(tick, 800);
+    return () => {
+      stopped = true;
+      clearInterval(handle);
+      clearTimeout(timeout);
+    };
+  }, [isProvider, state]);
+
   return (
     <Layout>
       <div className="grid2" style={{ alignItems: 'start' }}>
