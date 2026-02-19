@@ -158,31 +158,34 @@ export default function Dashboard() {
               <div style={{ height: 10 }} />
             ) : null}
             {me?.role === 'provider' ? (
-              <label className="row" style={{ justifyContent: 'space-between' }}>
+              <div className="row" style={{ justifyContent: 'space-between' }}>
                 <span className="muted">Available to take jobs</span>
-                <input
-                  type="checkbox"
-                  checked={me.providerProfile?.available ?? true}
-                  onChange={async e => {
-                    if (!me) return;
-                    const nextAvailable = e.target.checked;
-                    try {
-                      const updated = await updateProviderProfile({
-                        zip: me.providerProfile?.zip,
-                        country: me.providerProfile?.country,
-                        state: me.providerProfile?.state,
-                        lga: me.providerProfile?.lga,
-                        skills: me.providerProfile?.skills || [],
-                        available: nextAvailable,
-                        availabilityNote: me.providerProfile?.availabilityNote,
-                      });
-                      setMe(updated);
-                    } catch (err: any) {
-                      alert(err?.response?.data?.message || 'Unable to update availability');
-                    }
-                  }}
-                />
-              </label>
+                <label className="switch" aria-label="Availability toggle">
+                  <input
+                    type="checkbox"
+                    checked={me.providerProfile?.available ?? true}
+                    onChange={async e => {
+                      if (!me) return;
+                      const nextAvailable = e.target.checked;
+                      try {
+                        const updated = await updateProviderProfile({
+                          zip: me.providerProfile?.zip,
+                          country: me.providerProfile?.country,
+                          state: me.providerProfile?.state,
+                          lga: me.providerProfile?.lga,
+                          skills: me.providerProfile?.skills || [],
+                          available: nextAvailable,
+                          availabilityNote: me.providerProfile?.availabilityNote,
+                        });
+                        setMe(updated);
+                      } catch (err: any) {
+                        alert(err?.response?.data?.message || 'Unable to update availability');
+                      }
+                    }}
+                  />
+                  <span className="switchSlider" />
+                </label>
+              </div>
             ) : null}
 
             <div className="row" style={{ flexWrap: 'wrap', marginTop: 12 }}>

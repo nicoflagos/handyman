@@ -124,3 +124,55 @@ button {
   }
 }
 
+/* Toggle switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 26px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switchSlider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  transition: 0.2s ease;
+  border-radius: 999px;
+}
+
+.switchSlider:before {
+  position: absolute;
+  content: '';
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 2px;
+  background: rgba(255, 255, 255, 0.92);
+  transition: 0.2s ease;
+  border-radius: 999px;
+}
+
+.switch input:checked + .switchSlider {
+  background: rgba(34, 197, 94, 0.28);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.switch input:checked + .switchSlider:before {
+  transform: translateX(20px);
+}
+
+.switch input:focus-visible + .switchSlider {
+  outline: 2px solid rgba(59, 130, 246, 0.8);
+  outline-offset: 2px;
+}
