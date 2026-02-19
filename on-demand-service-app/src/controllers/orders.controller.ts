@@ -15,6 +15,23 @@ export class OrdersController {
     return plain;
   }
 
+  private async withPartyInfo(order: any, viewer: { role: 'customer' | 'provider' | 'admin'; userId: string }) {
+    const plain = order?.toObject ? order.toObject() : order;
+    if (!plain?.providerId) return plain;
+    if (plain.status === 'requested') return plain;
+
+    const isCustomer = String(plain.customerId) === viewer.userId;
+    const isHandyman = String(plain.providerId) === viewer.userId;
+    const isAdmin = viewer.role === 'admin';
+    if (!(isAdmin || isCustomer || isHandyman)) return plain;
+
+    const customer = await this.userService.getPublicProfile(new Types.ObjectId(String(plain.customerId)));
+    const handyman = await this.userService.getPublicProfile(new Types.ObjectId(String(plain.providerId)));
+    plain.customerInfo = customer;
+    plain.handymanInfo = handyman;
+    return plain;
+  }
+
   async listMyOrders(req: AuthRequest, res: Response) {
     try {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
@@ -123,7 +140,9 @@ export class OrdersController {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
-      return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode }));
+      const safe = this.toSafeOrder(order, { includeVerificationCode });
+      const enriched = await this.withPartyInfo(safe, { role, userId: req.userId });
+      return res.status(200).json(enriched);
     } catch (error) {
       return res.status(500).json({ message: 'Error retrieving order', error });
     }

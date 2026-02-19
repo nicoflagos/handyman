@@ -50,4 +50,15 @@ export class AuthController {
             return res.status(400).json({ message: error.message });
         }
     }
+
+    async resendVerifyEmail(req: any, res: any) {
+        try {
+            const { email } = req.body || {};
+            if (!email) return res.status(400).json({ message: 'email is required' });
+            const result = await this.authService.resendEmailVerification({ email });
+            return res.status(200).json(result);
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
+        }
+    }
 }

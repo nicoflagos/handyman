@@ -19,6 +19,7 @@ interface IUserDocument extends Document {
   lastName?: string;
   phone?: string;
   gender?: 'male' | 'female' | 'other';
+  avatarUrl?: string;
   username: string;
   email: string;
   emailVerified?: boolean;
@@ -41,6 +42,7 @@ const UserSchema = new Schema<IUserDocument>({
   lastName: { type: String, required: false, trim: true },
   phone: { type: String, required: false, trim: true },
   gender: { type: String, required: false, enum: ['male', 'female', 'other'] },
+  avatarUrl: { type: String, required: false, trim: true },
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true, trim: true, lowercase: true },
   // Default true for backward compatibility; new registrations can set to false.

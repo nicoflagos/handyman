@@ -14,6 +14,9 @@ const SKIP_DB = process.env.SKIP_DB === 'true';
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files (e.g. profile pictures)
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
+
 // Health check
 app.get('/health', (_req, res) => {
     res.status(200).json({ status: 'ok' });

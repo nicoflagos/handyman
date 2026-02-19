@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { register, verifyEmail } from '../services/auth';
+import { register, resendVerifyEmail, verifyEmail } from '../services/auth';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { InlineNotice } from '../ui/Toast';
@@ -166,6 +166,27 @@ export default function Register() {
                 <div className="row" style={{ justifyContent: 'space-between', marginTop: 4 }}>
                   <Button type="submit" loading={loading}>
                     Verify email
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={!email || loading}
+                    onClick={async () => {
+                      setError(null);
+                      setSuccess(null);
+                      try {
+                        setLoading(true);
+                        const res: any = await resendVerifyEmail({ email });
+                        if (res?.devEmailVerificationCode) setDevCode(res.devEmailVerificationCode);
+                        setSuccess(res?.sent ? 'Verification email resent.' : 'SMTP not configured. Check server logs for the code.');
+                      } catch (err: any) {
+                        setError(err?.response?.data?.message || 'Unable to resend code');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                  >
+                    Resend code
                   </Button>
                   <Button
                     type="button"

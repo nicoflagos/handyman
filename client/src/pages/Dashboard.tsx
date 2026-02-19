@@ -5,21 +5,24 @@ import { Button } from '../ui/Button';
 import { Link } from 'react-router-dom';
 import { InlineNotice } from '../ui/Toast';
 import { listMarketplaceOrders, listMyOrders, Order } from '../services/orders';
+import { getMe, Me, uploadAvatar } from '../services/me';
 
 export default function Dashboard() {
   const auth = useAuth();
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [market, setMarket] = React.useState<Order[]>([]);
+  const [me, setMe] = React.useState<Me | null>(null);
   const [state, setState] = React.useState<'loading' | 'ready' | 'error'>('loading');
   const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
   const isAdmin = auth.claims?.role === 'admin';
 
   React.useEffect(() => {
     setState('loading');
-    Promise.all([listMyOrders(), isProvider ? listMarketplaceOrders() : Promise.resolve([])])
-      .then(([my, m]) => {
+    Promise.all([listMyOrders(), isProvider ? listMarketplaceOrders() : Promise.resolve([]), getMe()])
+      .then(([my, m, meRes]) => {
         setOrders(my);
         setMarket(m);
+        setMe(meRes);
         setState('ready');
       })
       .catch(() => setState('error'));
@@ -32,8 +35,51 @@ export default function Dashboard() {
           <div className="cardInner">
             <h2 style={{ marginTop: 0, marginBottom: 6 }}>Dashboard</h2>
             <p className="muted" style={{ marginTop: 0 }}>
-              Welcome, <strong>{auth.claims?.firstName || auth.claims?.username || auth.claims?.email || 'there'}</strong>
+              Welcome,{' '}
+              <strong>
+                {me?.firstName || auth.claims?.firstName || auth.claims?.username || auth.claims?.email || 'there'}
+                {me?.lastName ? ` ${me.lastName}` : auth.claims?.lastName ? ` ${auth.claims.lastName}` : ''}
+              </strong>
             </p>
+
+            <div className="row" style={{ gap: 12, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+              {me?.avatarUrl ? (
+                <img
+                  src={me.avatarUrl}
+                  alt="Profile"
+                  style={{ width: 44, height: 44, borderRadius: 999, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.14)' }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 999,
+                    border: '1px solid rgba(255,255,255,0.14)',
+                    background: 'rgba(0,0,0,0.12)',
+                  }}
+                />
+              )}
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Profile picture</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const updated = await uploadAvatar(file);
+                      setMe(updated);
+                    } catch (err: any) {
+                      alert(err?.response?.data?.message || 'Unable to upload profile picture');
+                    } finally {
+                      e.currentTarget.value = '';
+                    }
+                  }}
+                />
+              </label>
+            </div>
 
             <div className="row" style={{ flexWrap: 'wrap', marginTop: 12 }}>
               {auth.claims?.role === 'customer' ? (

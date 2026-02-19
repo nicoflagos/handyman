@@ -14,6 +14,14 @@ export class UserService {
     return User.findByIdAndUpdate(userId, update, { new: true }).select('-password').exec();
   }
 
+  async updateAvatar(userId: Types.ObjectId, avatarUrl: string) {
+    return User.findByIdAndUpdate(userId, { $set: { avatarUrl } }, { new: true }).select('-password').exec();
+  }
+
+  async getPublicProfile(userId: Types.ObjectId) {
+    return User.findById(userId).select('_id username firstName lastName phone gender avatarUrl role').exec();
+  }
+
   async getRole(userId: Types.ObjectId): Promise<'customer' | 'provider' | 'admin'> {
     const user = await User.findById(userId).select('role').exec();
     return (user as any)?.role || 'customer';

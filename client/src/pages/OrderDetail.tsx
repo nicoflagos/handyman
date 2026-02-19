@@ -167,6 +167,73 @@ export default function OrderDetail() {
                   ) : null}
                 </div>
 
+                {order.status !== 'requested' && order.providerId && (order.customerInfo || order.handymanInfo) ? (
+                  <div style={{ marginTop: 14 }}>
+                    <div className="pill" style={{ marginBottom: 10 }}>
+                      Contact info
+                    </div>
+                    <div className="col" style={{ gap: 10 }}>
+                      {order.customerInfo ? (
+                        <div className="row" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+                          {order.customerInfo.avatarUrl ? (
+                            <img
+                              src={order.customerInfo.avatarUrl}
+                              alt="Customer"
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 999,
+                                objectFit: 'cover',
+                                border: '1px solid rgba(255,255,255,0.14)',
+                              }}
+                            />
+                          ) : null}
+                          <span className="pill">
+                            Customer:{' '}
+                            {[
+                              order.customerInfo.firstName,
+                              order.customerInfo.lastName,
+                            ]
+                              .filter(Boolean)
+                              .join(' ') || order.customerInfo.username}
+                          </span>
+                          {order.customerInfo.gender ? <span className="pill">Gender: {order.customerInfo.gender}</span> : null}
+                          {order.customerInfo.phone ? <span className="pill">Phone: {order.customerInfo.phone}</span> : null}
+                        </div>
+                      ) : null}
+
+                      {order.handymanInfo ? (
+                        <div className="row" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+                          {order.handymanInfo.avatarUrl ? (
+                            <img
+                              src={order.handymanInfo.avatarUrl}
+                              alt="Handyman"
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 999,
+                                objectFit: 'cover',
+                                border: '1px solid rgba(255,255,255,0.14)',
+                              }}
+                            />
+                          ) : null}
+                          <span className="pill">
+                            Handyman:{' '}
+                            {[
+                              order.handymanInfo.firstName,
+                              order.handymanInfo.lastName,
+                            ]
+                              .filter(Boolean)
+                              .join(' ') || order.handymanInfo.username}
+                          </span>
+                          {order.handymanInfo.gender ? <span className="pill">Gender: {order.handymanInfo.gender}</span> : null}
+                          {order.handymanInfo.phone ? <span className="pill">Phone: {order.handymanInfo.phone}</span> : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+
                 {isProvider && order.status === 'accepted' ? (
                   <div style={{ marginTop: 12 }}>
                     <label style={{ display: 'grid', gap: 6 }}>

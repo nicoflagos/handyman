@@ -15,6 +15,11 @@ export type Me = {
   _id: string;
   email: string;
   username: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  gender?: 'male' | 'female' | 'other';
+  avatarUrl?: string;
   role: 'customer' | 'provider' | 'admin';
   providerProfile?: ProviderProfile;
 };
@@ -26,5 +31,12 @@ export async function getMe(): Promise<Me> {
 
 export async function updateProviderProfile(input: ProviderProfile): Promise<Me> {
   const res = await apiClient.put('/providers/me', input);
+  return res.data as Me;
+}
+
+export async function uploadAvatar(file: File): Promise<Me> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await apiClient.post('/me/avatar', form, { headers: { 'Content-Type': 'multipart/form-data' } });
   return res.data as Me;
 }

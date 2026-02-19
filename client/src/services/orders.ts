@@ -30,11 +30,24 @@ export type Order = {
   verificationVerifiedAt?: string;
   customerRating?: OrderRating;
   handymanRating?: OrderRating;
+  customerInfo?: PublicUser;
+  handymanInfo?: PublicUser;
   scheduledAt?: string;
   status: OrderStatus;
   timeline: OrderTimelineEvent[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type PublicUser = {
+  _id: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  gender?: 'male' | 'female' | 'other';
+  avatarUrl?: string;
+  role?: 'customer' | 'provider' | 'admin';
 };
 
 export async function createOrder(input: {

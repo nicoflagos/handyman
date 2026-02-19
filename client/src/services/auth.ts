@@ -30,3 +30,8 @@ export async function verifyEmail(input: { email: string; code: string }) {
   const res = await apiClient.post('/auth/verify-email', input);
   return res.data as { email: string; emailVerified: boolean };
 }
+
+export async function resendVerifyEmail(input: { email: string }) {
+  const res = await apiClient.post('/auth/resend-verify-email', input);
+  return res.data as { email: string; emailVerified: boolean; sent: boolean; devEmailVerificationCode?: string };
+}

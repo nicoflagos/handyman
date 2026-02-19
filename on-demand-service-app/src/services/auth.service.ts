@@ -17,6 +17,9 @@ async function trySendEmailVerification(opts: { to: string; code: string }) {
     const from = process.env.SMTP_FROM;
 
     if (!host || !port || !from) return false;
+    if ((user && !pass) || (!user && pass)) {
+        throw new Error('SMTP_USER and SMTP_PASS must be set together');
+    }
 
     const transport = nodemailer.createTransport({
         host,
@@ -80,13 +83,14 @@ export class AuthService {
         });
         await user.save();
 
-        // TODO: send verification email via SMTP provider (SendGrid/Mailgun/etc).
-        const isDev = String(process.env.NODE_ENV || '').toLowerCase() === 'development';
+        const nodeEnv = String(process.env.NODE_ENV || '').toLowerCase();
+        const isDev = nodeEnv === 'development';
         try {
             const sent = await trySendEmailVerification({ to: normalizedEmail, code });
             if (!sent) console.log(`[email-verify] ${normalizedEmail} code=${code} (SMTP not configured)`);
+            else console.log(`[email-verify] ${normalizedEmail} email sent`);
         } catch (err) {
-            console.log(`[email-verify] ${normalizedEmail} code=${code} (email send failed)`);
+            console.log(`[email-verify] ${normalizedEmail} code=${code} (email send failed): ${(err as any)?.message || err}`);
         }
 
         return {
@@ -95,6 +99,7 @@ export class AuthService {
             role: user.role,
             emailVerified: (user as any).emailVerified,
             ...(isDev ? { devEmailVerificationCode: code } : {}),
+            nodeEnv: nodeEnv || undefined,
         };
     }
 
@@ -160,6 +165,38 @@ export class AuthService {
         user.emailVerificationExpiresAt = undefined;
         await user.save();
         return { email: user.email, emailVerified: true };
+    }
+
+    public async resendEmailVerification(input: { email: string }) {
+        const normalizedEmail = input.email.trim().toLowerCase();
+        const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const emailRegex = new RegExp(`^${escapeRegExp(normalizedEmail)}$`, 'i');
+
+        const user: any = await User.findOne({ email: emailRegex })
+            .select('+emailVerificationCodeHash +emailVerificationExpiresAt emailVerified email')
+            .exec();
+        if (!user) throw new Error('User not found');
+        if (user.emailVerified) return { email: user.email, emailVerified: true, sent: false };
+
+        const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+        user.emailVerificationCodeHash = hashVerificationCode(normalizedEmail, code);
+        user.emailVerificationExpiresAt = new Date(Date.now() + 1000 * 60 * 30);
+        await user.save();
+
+        const nodeEnv = String(process.env.NODE_ENV || '').toLowerCase();
+        const isDev = nodeEnv === 'development';
+        let sent = false;
+        try {
+            sent = await trySendEmailVerification({ to: normalizedEmail, code });
+            if (!sent) console.log(`[email-verify-resend] ${normalizedEmail} code=${code} (SMTP not configured)`);
+            else console.log(`[email-verify-resend] ${normalizedEmail} email sent`);
+        } catch (err) {
+            console.log(
+                `[email-verify-resend] ${normalizedEmail} code=${code} (email send failed): ${(err as any)?.message || err}`,
+            );
+        }
+
+        return { email: user.email, emailVerified: false, sent, ...(isDev ? { devEmailVerificationCode: code } : {}) };
     }
 
     public verifyToken(token: string) {

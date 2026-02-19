@@ -7,6 +7,7 @@ import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
 import { OrderService } from '../services/order.service';
 import { authMiddleware } from '../middlewares/auth.middleware';
+import multer from 'multer';
 
 const router = Router();
 
@@ -15,16 +16,20 @@ const userController = new UserController(new UserService());
 const servicesController = new ServicesController();
 const ordersController = new OrdersController(new OrderService(), new UserService());
 
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
+
 // Authentication routes
 router.post('/auth/login', (req, res) => authController.login(req, res));
 router.post('/auth/register', (req, res) => authController.register(req, res));
 router.post('/auth/verify-email', (req, res) => authController.verifyEmail(req, res));
+router.post('/auth/resend-verify-email', (req, res) => authController.resendVerifyEmail(req, res));
 
 // Service catalog (public)
 router.get('/services', (req, res) => servicesController.list(req, res));
 
 // User routes
 router.get('/me', authMiddleware, (req, res) => userController.getMe(req as any, res));
+router.post('/me/avatar', authMiddleware, upload.single('file'), (req, res) => userController.uploadAvatar(req as any, res));
 router.put('/providers/me', authMiddleware, (req, res) => userController.updateProviderProfile(req as any, res));
 router.get('/users/:id', authMiddleware, (req, res) => userController.getUserProfile(req, res));
 router.put('/users/:id', authMiddleware, (req, res) => userController.updateUserProfile(req, res));
