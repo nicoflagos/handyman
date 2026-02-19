@@ -294,10 +294,10 @@ export default function OrderDetail() {
                           </span>
                           {order.customerInfo.gender ? <span className="pill">Gender: {order.customerInfo.gender}</span> : null}
                           {order.customerInfo.phone ? <span className="pill">Phone: {order.customerInfo.phone}</span> : null}
-                          {typeof order.customerInfo.ratingAsCustomerAvg === 'number' &&
-                          typeof order.customerInfo.ratingAsCustomerCount === 'number' ? (
-                            <span className="pill">
-                              Rating: {order.customerInfo.ratingAsCustomerAvg.toFixed(1)} ({order.customerInfo.ratingAsCustomerCount})
+                          {typeof order.customerInfo.ratingAsCustomerAvg === 'number' ? (
+                            <span className="pill" title={`${order.customerInfo.ratingAsCustomerAvg.toFixed(1)} / 5`}>
+                              Rating: {'★'.repeat(Math.max(0, Math.min(5, Math.round(order.customerInfo.ratingAsCustomerAvg))))}
+                              {'☆'.repeat(Math.max(0, 5 - Math.max(0, Math.min(5, Math.round(order.customerInfo.ratingAsCustomerAvg)))))}
                             </span>
                           ) : null}
                         </div>
@@ -329,10 +329,10 @@ export default function OrderDetail() {
                           </span>
                           {order.handymanInfo.gender ? <span className="pill">Gender: {order.handymanInfo.gender}</span> : null}
                           {order.handymanInfo.phone ? <span className="pill">Phone: {order.handymanInfo.phone}</span> : null}
-                          {typeof order.handymanInfo.ratingAsHandymanAvg === 'number' &&
-                          typeof order.handymanInfo.ratingAsHandymanCount === 'number' ? (
-                            <span className="pill">
-                              Rating: {order.handymanInfo.ratingAsHandymanAvg.toFixed(1)} ({order.handymanInfo.ratingAsHandymanCount})
+                          {typeof order.handymanInfo.ratingAsHandymanAvg === 'number' ? (
+                            <span className="pill" title={`${order.handymanInfo.ratingAsHandymanAvg.toFixed(1)} / 5`}>
+                              Rating: {'★'.repeat(Math.max(0, Math.min(5, Math.round(order.handymanInfo.ratingAsHandymanAvg))))}
+                              {'☆'.repeat(Math.max(0, 5 - Math.max(0, Math.min(5, Math.round(order.handymanInfo.ratingAsHandymanAvg)))))}
                             </span>
                           ) : null}
                         </div>

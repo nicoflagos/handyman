@@ -1,7 +1,7 @@
 :root {
-  --bg: #0b1220;
+  --bg: #070b16;
   --panel: rgba(255, 255, 255, 0.06);
-  --panel-strong: rgba(255, 255, 255, 0.1);
+  --panel-strong: rgba(255, 255, 255, 0.12);
   --text: rgba(255, 255, 255, 0.92);
   --muted: rgba(255, 255, 255, 0.72);
   --border: rgba(255, 255, 255, 0.12);
@@ -38,12 +38,16 @@ body {
     Arial,
     Apple Color Emoji,
     Segoe UI Emoji;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   color: var(--text);
   background:
-    radial-gradient(1200px 800px at 10% 0%, rgba(124, 92, 255, 0.18), transparent 55%),
-    radial-gradient(900px 600px at 90% 20%, rgba(45, 212, 191, 0.16), transparent 55%),
-    radial-gradient(600px 600px at 50% 100%, rgba(255, 255, 255, 0.06), transparent 60%),
+    radial-gradient(1100px 800px at 12% 0%, rgba(124, 92, 255, 0.22), transparent 55%),
+    radial-gradient(900px 650px at 90% 18%, rgba(45, 212, 191, 0.18), transparent 55%),
+    radial-gradient(700px 700px at 50% 100%, rgba(255, 255, 255, 0.05), transparent 60%),
     var(--bg);
+  background-attachment: fixed;
 }
 
 a {
@@ -73,7 +77,7 @@ button {
 }
 
 .card {
-  background: var(--panel);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.04));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -107,9 +111,13 @@ button {
   border-radius: 999px;
   padding: 6px 10px;
   border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.14);
+  background: rgba(0, 0, 0, 0.12);
   color: var(--muted);
   font-size: 13px;
+}
+
+input[type='file'] {
+  color: var(--muted);
 }
 
 .grid2 {

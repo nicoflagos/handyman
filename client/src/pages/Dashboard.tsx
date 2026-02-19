@@ -17,6 +17,13 @@ export default function Dashboard() {
   const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
   const isAdmin = auth.claims?.role === 'admin';
 
+  function stars(avg?: number) {
+    const n = Number(avg);
+    if (!Number.isFinite(n) || n <= 0) return '☆☆☆☆☆';
+    const filled = Math.max(0, Math.min(5, Math.round(n)));
+    return `${'★'.repeat(filled)}${'☆'.repeat(5 - filled)}`;
+  }
+
   React.useEffect(() => {
     setState('loading');
     Promise.all([
@@ -86,13 +93,13 @@ export default function Dashboard() {
                 <img
                   src={me.avatarUrl}
                   alt="Profile"
-                  style={{ width: 44, height: 44, borderRadius: 999, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.14)' }}
+                  style={{ width: 88, height: 88, borderRadius: 999, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.14)' }}
                 />
               ) : (
                 <div
                   style={{
-                    width: 44,
-                    height: 44,
+                    width: 88,
+                    height: 88,
                     borderRadius: 999,
                     border: '1px solid rgba(255,255,255,0.14)',
                     background: 'rgba(0,0,0,0.12)',
@@ -143,13 +150,13 @@ export default function Dashboard() {
                 Top up wallet
               </Button>
               {me?.role === 'customer' && typeof me.ratingAsCustomerAvg === 'number' ? (
-                <span className="pill">
-                  Rating: {me.ratingAsCustomerAvg.toFixed(1)} ({me.ratingAsCustomerCount || 0})
+                <span className="pill" title={`${me.ratingAsCustomerAvg.toFixed(1)} / 5`}>
+                  Rating: {stars(me.ratingAsCustomerAvg)}
                 </span>
               ) : null}
               {me?.role === 'provider' && typeof me.ratingAsHandymanAvg === 'number' ? (
-                <span className="pill">
-                  Rating: {me.ratingAsHandymanAvg.toFixed(1)} ({me.ratingAsHandymanCount || 0})
+                <span className="pill" title={`${me.ratingAsHandymanAvg.toFixed(1)} / 5`}>
+                  Rating: {stars(me.ratingAsHandymanAvg)}
                 </span>
               ) : null}
             </div>
