@@ -15,8 +15,15 @@ export type ProviderProfile = {
 };
 
 interface IUserDocument extends Document {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  gender?: 'male' | 'female' | 'other';
   username: string;
   email: string;
+  emailVerified?: boolean;
+  emailVerificationCodeHash?: string;
+  emailVerificationExpiresAt?: Date;
   password: string;
   role: UserRole;
   providerProfile?: ProviderProfile;
@@ -30,8 +37,16 @@ interface IUserDocument extends Document {
 }
 
 const UserSchema = new Schema<IUserDocument>({
+  firstName: { type: String, required: false, trim: true },
+  lastName: { type: String, required: false, trim: true },
+  phone: { type: String, required: false, trim: true },
+  gender: { type: String, required: false, enum: ['male', 'female', 'other'] },
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+  // Default true for backward compatibility; new registrations can set to false.
+  emailVerified: { type: Boolean, default: true, index: true },
+  emailVerificationCodeHash: { type: String, required: false, select: false },
+  emailVerificationExpiresAt: { type: Date, required: false, select: false },
   password: { type: String, required: true },
   role: { type: String, enum: ['customer', 'provider', 'admin'], default: 'customer', index: true },
   providerProfile: {

@@ -5,11 +5,22 @@ export class AuthController {
 
     async register(req: any, res: any) {
         try {
-            const { email, password, username, role } = req.body;
-            if (!email || !password) {
-                return res.status(400).json({ message: 'Email and password required' });
+            const { firstName, lastName, phone, gender, email, password, username, role } = req.body || {};
+            if (!firstName || !lastName || !phone || !gender || !email || !password) {
+                return res
+                    .status(400)
+                    .json({ message: 'firstName, lastName, phone, gender, email, and password are required' });
             }
-            const user = await this.authService.register(email, password, username, role);
+            const user = await this.authService.register({
+                email,
+                password,
+                username,
+                role,
+                firstName,
+                lastName,
+                phone,
+                gender,
+            });
             res.status(201).json(user);
         } catch (error: any) {
             res.status(400).json({ message: error.message });
@@ -26,6 +37,17 @@ export class AuthController {
             res.status(200).json({ token });
         } catch (error: any) {
             res.status(401).json({ message: error.message });
+        }
+    }
+
+    async verifyEmail(req: any, res: any) {
+        try {
+            const { email, code } = req.body || {};
+            if (!email || !code) return res.status(400).json({ message: 'email and code are required' });
+            const result = await this.authService.verifyEmail({ email, code });
+            return res.status(200).json(result);
+        } catch (error: any) {
+            return res.status(400).json({ message: error.message });
         }
     }
 }

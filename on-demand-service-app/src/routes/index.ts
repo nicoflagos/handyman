@@ -18,6 +18,7 @@ const ordersController = new OrdersController(new OrderService(), new UserServic
 // Authentication routes
 router.post('/auth/login', (req, res) => authController.login(req, res));
 router.post('/auth/register', (req, res) => authController.register(req, res));
+router.post('/auth/verify-email', (req, res) => authController.verifyEmail(req, res));
 
 // Service catalog (public)
 router.get('/services', (req, res) => servicesController.list(req, res));
