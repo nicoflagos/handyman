@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { register, resendVerifyEmail, verifyEmail } from '../services/auth';
+import { register } from '../services/auth';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { InlineNotice } from '../ui/Toast';
@@ -17,9 +17,6 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [verifyStep, setVerifyStep] = useState(false);
-  const [emailCode, setEmailCode] = useState('');
-  const [devCode, setDevCode] = useState<string | null>(null);
   const navigate = useNavigate();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -28,29 +25,11 @@ export default function Register() {
     setSuccess(null);
     try {
       setLoading(true);
-      const res: any = await register({ firstName, lastName, phone, gender, email, password, role });
-      setDevCode(res?.devEmailVerificationCode || null);
-      setVerifyStep(true);
-      setSuccess('Account created. Verify your email to continue.');
-      return;
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-    try {
-      setLoading(true);
-      await verifyEmail({ email, code: emailCode });
-      setSuccess('Email verified - redirecting to login...');
+      await register({ firstName, lastName, phone, gender, email, password, role });
+      setSuccess('Registered successfully — redirecting to login…');
       setTimeout(() => navigate('/login', { replace: true }), 800);
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Verification failed');
+      setError(err?.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -66,8 +45,7 @@ export default function Register() {
               Start booking services and tracking orders in one place.
             </p>
 
-            {!verifyStep ? (
-              <form onSubmit={handleSubmit} className="col" style={{ marginTop: 12 }}>
+            <form onSubmit={handleSubmit} className="col" style={{ marginTop: 12 }}>
                 <div className="grid2">
                   <Input label="First name" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="e.g. Ada" />
                   <Input label="Last name" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="e.g. Okafor" />
@@ -149,59 +127,7 @@ export default function Register() {
                     Already have an account? <Link to="/login">Login</Link>
                   </span>
                 </div>
-              </form>
-            ) : (
-              <form onSubmit={handleVerify} className="col" style={{ marginTop: 12 }}>
-                <InlineNotice kind="info">We sent a verification code to your email. Enter it below to verify your account.</InlineNotice>
-                {devCode ? <InlineNotice kind="info">Dev code: {devCode}</InlineNotice> : null}
-                <Input
-                  label="Email verification code"
-                  value={emailCode}
-                  onChange={e => setEmailCode(e.target.value)}
-                  inputMode="numeric"
-                  placeholder="6-digit code"
-                />
-                {error ? <InlineNotice kind="error">{error}</InlineNotice> : null}
-                {success ? <InlineNotice kind="success">{success}</InlineNotice> : null}
-                <div className="row" style={{ justifyContent: 'space-between', marginTop: 4 }}>
-                  <Button type="submit" loading={loading}>
-                    Verify email
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    disabled={!email || loading}
-                    onClick={async () => {
-                      setError(null);
-                      setSuccess(null);
-                      try {
-                        setLoading(true);
-                        const res: any = await resendVerifyEmail({ email });
-                        if (res?.devEmailVerificationCode) setDevCode(res.devEmailVerificationCode);
-                        setSuccess(res?.sent ? 'Verification email resent.' : 'SMTP not configured. Check server logs for the code.');
-                      } catch (err: any) {
-                        setError(err?.response?.data?.message || 'Unable to resend code');
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                  >
-                    Resend code
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setVerifyStep(false);
-                      setSuccess(null);
-                      setError(null);
-                    }}
-                  >
-                    Back
-                  </Button>
-                </div>
-              </form>
-            )}
+            </form>
           </div>
         </div>
 

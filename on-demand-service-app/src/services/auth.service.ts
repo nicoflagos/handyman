@@ -64,10 +64,6 @@ export class AuthService {
             throw new Error('User already exists');
         }
 
-        const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
-        const emailVerificationCodeHash = hashVerificationCode(normalizedEmail, code);
-        const emailVerificationExpiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes
-
         const user = new User({
             email: normalizedEmail,
             password,
@@ -77,29 +73,16 @@ export class AuthService {
             lastName: typeof lastName === 'string' ? lastName.trim() : undefined,
             phone: typeof phone === 'string' ? phone.trim() : undefined,
             gender,
-            emailVerified: false,
-            emailVerificationCodeHash,
-            emailVerificationExpiresAt,
+            // Email verification disabled for now.
+            emailVerified: true,
         });
         await user.save();
-
-        const nodeEnv = String(process.env.NODE_ENV || '').toLowerCase();
-        const isDev = nodeEnv === 'development';
-        try {
-            const sent = await trySendEmailVerification({ to: normalizedEmail, code });
-            if (!sent) console.log(`[email-verify] ${normalizedEmail} code=${code} (SMTP not configured)`);
-            else console.log(`[email-verify] ${normalizedEmail} email sent`);
-        } catch (err) {
-            console.log(`[email-verify] ${normalizedEmail} code=${code} (email send failed): ${(err as any)?.message || err}`);
-        }
 
         return {
             email: user.email,
             username: user.username,
             role: user.role,
             emailVerified: (user as any).emailVerified,
-            ...(isDev ? { devEmailVerificationCode: code } : {}),
-            nodeEnv: nodeEnv || undefined,
         };
     }
 
@@ -112,9 +95,6 @@ export class AuthService {
         const user = await User.findOne({ email: emailRegex }).exec();
         if (!user) {
             throw new Error('Invalid email or password');
-        }
-        if ((user as any).emailVerified === false) {
-            throw new Error('Please verify your email before logging in');
         }
         const isValid = await user.comparePassword(password);
         if (!isValid) {
