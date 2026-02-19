@@ -11,6 +11,7 @@ type CreateOrderInput = {
   country: string;
   state: string;
   lga: string;
+  price: number;
   scheduledAt?: Date;
 };
 
@@ -26,6 +27,7 @@ export class OrderService {
       country: input.country,
       state: input.state,
       lga: input.lga,
+      price: input.price,
       verificationCode,
       scheduledAt: input.scheduledAt,
       status: 'requested',

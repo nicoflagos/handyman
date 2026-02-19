@@ -77,11 +77,6 @@ export default function ProviderSettings() {
               <div className="col" style={{ marginTop: 12 }}>
                 <NigeriaLocationSelect value={location} onChange={setLocation} showStreet={false} />
 
-                <label className="row" style={{ justifyContent: 'space-between' }}>
-                  <span className="muted">Available to take jobs</span>
-                  <input type="checkbox" checked={available} onChange={e => setAvailable(e.target.checked)} />
-                </label>
-
                 <label style={{ display: 'grid', gap: 6 }}>
                   <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Availability note</span>
                   <input

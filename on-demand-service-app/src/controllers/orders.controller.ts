@@ -3,6 +3,10 @@ import { Types } from 'mongoose';
 import { OrderService } from '../services/order.service';
 import { UserService } from '../services/user.service';
 import { OrderStatus } from '../models/mongo/order.schema';
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+import { Transaction } from '../models/mongo/transaction.schema';
 
 type AuthRequest = Request & { userId?: string };
 
@@ -38,13 +42,23 @@ export class OrdersController {
     // - handyman sees customer
     if (isCustomer) {
       const handyman = await this.userService.getPublicProfile(new Types.ObjectId(String(plain.providerId)));
-      plain.handymanInfo = handyman;
+      const h: any = handyman?.toObject ? handyman.toObject() : handyman;
+      if (h) {
+        delete h.ratingAsCustomerAvg;
+        delete h.ratingAsCustomerCount;
+      }
+      plain.handymanInfo = h;
       return plain;
     }
 
     if (isHandyman) {
       const customer = await this.userService.getPublicProfile(new Types.ObjectId(String(plain.customerId)));
-      plain.customerInfo = customer;
+      const c: any = customer?.toObject ? customer.toObject() : customer;
+      if (c) {
+        delete c.ratingAsHandymanAvg;
+        delete c.ratingAsHandymanCount;
+      }
+      plain.customerInfo = c;
       return plain;
     }
 
@@ -99,9 +113,10 @@ export class OrdersController {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
       const role = await this.userService.getRole(new Types.ObjectId(req.userId));
       if (role !== 'customer') return res.status(403).json({ message: 'Only customers can create orders' });
-      const { serviceKey, title, description, address, scheduledAt, country, state, lga } = req.body || {};
-      if (!serviceKey || !title || !country || !state || !lga) {
-        return res.status(400).json({ message: 'serviceKey, title, country, state, and lga are required' });
+      const { serviceKey, title, description, address, scheduledAt, country, state, lga, price } = req.body || {};
+      const nPrice = Number(price);
+      if (!serviceKey || !title || !country || !state || !lga || !Number.isFinite(nPrice) || nPrice <= 0) {
+        return res.status(400).json({ message: 'serviceKey, title, country, state, lga, and price are required' });
       }
 
       const customerId = new Types.ObjectId(req.userId);
@@ -114,6 +129,7 @@ export class OrdersController {
         country,
         state,
         lga,
+        price: nPrice,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
       });
       return res.status(201).json(this.toSafeOrder(order, { includeVerificationCode: true }));
@@ -215,21 +231,8 @@ export class OrdersController {
 
       if (!allowed) return res.status(403).json({ message: 'Forbidden' });
 
-      // Verification: handyman must enter the customer's code to start (accepted -> in_progress).
-      if (role === 'provider' && nextStatus === 'in_progress') {
-        if (order.status !== 'accepted') {
-          return res.status(400).json({ message: 'Order must be accepted before starting' });
-        }
-        if ((order as any).verificationCode && !order.verificationVerifiedAt) {
-          const code = String(verificationCode || '').trim();
-          if (!code) return res.status(400).json({ message: 'verificationCode is required to start this job' });
-          if (code !== (order as any).verificationCode) {
-            return res.status(400).json({ message: 'Invalid verification code' });
-          }
-          (order as any).verificationVerifiedAt = new Date();
-          (order as any).verificationVerifiedBy = actorId;
-          await (order as any).save();
-        }
+      if (role === 'provider' && (nextStatus === 'in_progress' || nextStatus === 'completed')) {
+        return res.status(400).json({ message: 'Use the start/complete endpoints for jobs' });
       }
 
       const updated = await this.orderService.setStatus({
@@ -294,6 +297,174 @@ export class OrdersController {
       return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
     } catch (error) {
       return res.status(500).json({ message: 'Error rating order', error });
+    }
+  }
+
+  private saveOrderImage(opts: { orderId: string; kind: 'before' | 'after'; file: { mimetype?: string; buffer?: Buffer } }) {
+    if (!opts.file?.buffer) throw new Error('file is required');
+    if (!opts.file.mimetype || !opts.file.mimetype.startsWith('image/')) throw new Error('Only image uploads are allowed');
+
+    const ext =
+      opts.file.mimetype === 'image/png'
+        ? 'png'
+        : opts.file.mimetype === 'image/webp'
+          ? 'webp'
+          : opts.file.mimetype === 'image/gif'
+            ? 'gif'
+            : 'jpg';
+
+    const uploadsDir = path.resolve(process.cwd(), 'uploads', 'orders', opts.orderId, opts.kind);
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    const name = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
+    const fullPath = path.join(uploadsDir, name);
+    fs.writeFileSync(fullPath, opts.file.buffer);
+    return `/uploads/orders/${opts.orderId}/${opts.kind}/${name}`;
+  }
+
+  async confirmPrice(req: AuthRequest, res: Response) {
+    try {
+      if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+      const actorId = new Types.ObjectId(req.userId);
+      const role = await this.userService.getRole(actorId);
+      if (role !== 'provider') return res.status(403).json({ message: 'Only handymen can confirm price' });
+
+      const order = await this.orderService.getById(req.params.id);
+      if (!order) return res.status(404).json({ message: 'Order not found' });
+      if (!order.providerId || order.providerId.toString() !== req.userId) return res.status(403).json({ message: 'Forbidden' });
+      if (order.status !== 'accepted') return res.status(400).json({ message: 'Order must be accepted first' });
+
+      (order as any).priceConfirmed = true;
+      (order as any).priceConfirmedAt = new Date();
+      await (order as any).save();
+      return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
+    } catch (error) {
+      return res.status(500).json({ message: 'Error confirming price', error });
+    }
+  }
+
+  async startOrder(req: AuthRequest, res: Response) {
+    try {
+      if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+      const actorId = new Types.ObjectId(req.userId);
+      const role = await this.userService.getRole(actorId);
+      if (role !== 'provider') return res.status(403).json({ message: 'Only handymen can start jobs' });
+
+      const order: any = await this.orderService.getById(req.params.id);
+      if (!order) return res.status(404).json({ message: 'Order not found' });
+      if (!order.providerId || order.providerId.toString() !== req.userId) return res.status(403).json({ message: 'Forbidden' });
+      if (order.status !== 'accepted') return res.status(400).json({ message: 'Order must be accepted before starting' });
+      if (!order.priceConfirmed) return res.status(400).json({ message: 'Confirm price before starting' });
+
+      const code = String((req.body?.verificationCode || '')).trim();
+      if (order.verificationCode && !order.verificationVerifiedAt) {
+        if (!code) return res.status(400).json({ message: 'verificationCode is required to start this job' });
+        if (code !== order.verificationCode) return res.status(400).json({ message: 'Invalid verification code' });
+        order.verificationVerifiedAt = new Date();
+        order.verificationVerifiedBy = actorId;
+      }
+
+      const file = (req as any).file as any;
+      const url = this.saveOrderImage({ orderId: String(order._id), kind: 'before', file });
+      order.beforeImageUrls = Array.isArray(order.beforeImageUrls) ? order.beforeImageUrls : [];
+      order.beforeImageUrls.push(url);
+
+      // Fund escrow: customer pays job fee + 10% platform fee, held until completion.
+      if (!order.escrowFundedAt) {
+        const jobFee = Number(order.price || 0);
+        if (!Number.isFinite(jobFee) || jobFee <= 0) return res.status(400).json({ message: 'Order price is invalid' });
+        const platformFee = Math.round(jobFee * 0.1);
+        const total = jobFee + platformFee;
+
+        const customer: any = await this.userService.getById(String(order.customerId));
+        if (!customer) return res.status(400).json({ message: 'Customer not found' });
+        if (typeof customer.walletBalance !== 'number') customer.walletBalance = 100000;
+        if (customer.walletBalance < total) return res.status(400).json({ message: 'Customer wallet balance is insufficient' });
+
+        customer.walletBalance -= total;
+        await customer.save();
+
+        await Transaction.create([
+          {
+            userId: new Types.ObjectId(String(order.customerId)),
+            direction: 'out',
+            type: 'order_escrow_debit',
+            amount: jobFee,
+            currency: 'NGN',
+            ref: `order:${order._id}`,
+            meta: { orderId: String(order._id) },
+          },
+          {
+            userId: new Types.ObjectId(String(order.customerId)),
+            direction: 'out',
+            type: 'platform_fee',
+            amount: platformFee,
+            currency: 'NGN',
+            ref: `order:${order._id}`,
+            meta: { orderId: String(order._id) },
+          },
+        ]);
+
+        order.escrowTotal = total;
+        order.escrowJobAmount = jobFee;
+        order.escrowPlatformFee = platformFee;
+        order.escrowFundedAt = new Date();
+      }
+
+      order.status = 'in_progress';
+      order.timeline.push({ status: 'in_progress', at: new Date(), by: actorId });
+      await order.save();
+      return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
+    } catch (error: any) {
+      return res.status(400).json({ message: error?.message || 'Unable to start order' });
+    }
+  }
+
+  async completeOrder(req: AuthRequest, res: Response) {
+    try {
+      if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+      const actorId = new Types.ObjectId(req.userId);
+      const role = await this.userService.getRole(actorId);
+      if (role !== 'provider') return res.status(403).json({ message: 'Only handymen can complete jobs' });
+
+      const order: any = await this.orderService.getById(req.params.id);
+      if (!order) return res.status(404).json({ message: 'Order not found' });
+      if (!order.providerId || order.providerId.toString() !== req.userId) return res.status(403).json({ message: 'Forbidden' });
+      if (order.status !== 'in_progress') return res.status(400).json({ message: 'Order must be in progress to complete' });
+
+      const file = (req as any).file as any;
+      const url = this.saveOrderImage({ orderId: String(order._id), kind: 'after', file });
+      order.afterImageUrls = Array.isArray(order.afterImageUrls) ? order.afterImageUrls : [];
+      order.afterImageUrls.push(url);
+
+      if (!order.escrowFundedAt) return res.status(400).json({ message: 'Escrow not funded' });
+      if (order.escrowReleasedAt) return res.status(400).json({ message: 'Escrow already released' });
+
+      const jobFee = Number(order.escrowJobAmount || order.price || 0);
+      if (!Number.isFinite(jobFee) || jobFee <= 0) return res.status(400).json({ message: 'Order price is invalid' });
+
+      const handyman: any = await this.userService.getById(String(order.providerId));
+      if (!handyman) return res.status(400).json({ message: 'Handyman not found' });
+      if (typeof handyman.walletBalance !== 'number') handyman.walletBalance = 100000;
+      handyman.walletBalance += jobFee;
+      await handyman.save();
+
+      await Transaction.create({
+        userId: new Types.ObjectId(String(order.providerId)),
+        direction: 'in',
+        type: 'order_payout',
+        amount: jobFee,
+        currency: 'NGN',
+        ref: `order:${order._id}`,
+        meta: { orderId: String(order._id) },
+      });
+
+      order.escrowReleasedAt = new Date();
+      order.status = 'completed';
+      order.timeline.push({ status: 'completed', at: new Date(), by: actorId });
+      await order.save();
+      return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
+    } catch (error: any) {
+      return res.status(400).json({ message: error?.message || 'Unable to complete order' });
     }
   }
 }

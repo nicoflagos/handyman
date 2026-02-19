@@ -19,7 +19,11 @@ export class UserService {
   }
 
   async getPublicProfile(userId: Types.ObjectId) {
-    return User.findById(userId).select('_id username firstName lastName phone gender avatarUrl role').exec();
+    return User.findById(userId)
+      .select(
+        '_id username firstName lastName phone gender avatarUrl role ratingAsCustomerAvg ratingAsCustomerCount ratingAsHandymanAvg ratingAsHandymanCount',
+      )
+      .exec();
   }
 
   async getRole(userId: Types.ObjectId): Promise<'customer' | 'provider' | 'admin'> {

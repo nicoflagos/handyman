@@ -26,6 +26,8 @@ export type Order = {
   country: string;
   state: string;
   lga: string;
+  price: number;
+  priceConfirmed?: boolean;
   verificationCode?: string;
   verificationVerifiedAt?: string;
   customerRating?: OrderRating;
@@ -48,6 +50,10 @@ export type PublicUser = {
   gender?: 'male' | 'female' | 'other';
   avatarUrl?: string;
   role?: 'customer' | 'provider' | 'admin';
+  ratingAsCustomerAvg?: number;
+  ratingAsCustomerCount?: number;
+  ratingAsHandymanAvg?: number;
+  ratingAsHandymanCount?: number;
 };
 
 export async function createOrder(input: {
@@ -58,6 +64,7 @@ export async function createOrder(input: {
   country: string;
   state: string;
   lga: string;
+  price: number;
   scheduledAt?: string;
 }): Promise<Order> {
   const res = await apiClient.post('/orders', input);
@@ -96,5 +103,25 @@ export async function setOrderStatus(
 
 export async function rateOrder(orderId: string, input: { stars: number; note?: string }): Promise<Order> {
   const res = await apiClient.post(`/orders/${orderId}/rate`, input);
+  return res.data as Order;
+}
+
+export async function confirmOrderPrice(orderId: string): Promise<Order> {
+  const res = await apiClient.post(`/orders/${orderId}/confirm-price`, {});
+  return res.data as Order;
+}
+
+export async function startOrder(orderId: string, input: { verificationCode?: string; file: File }): Promise<Order> {
+  const form = new FormData();
+  if (input.verificationCode) form.append('verificationCode', input.verificationCode);
+  form.append('file', input.file);
+  const res = await apiClient.post(`/orders/${orderId}/start`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  return res.data as Order;
+}
+
+export async function completeOrder(orderId: string, file: File): Promise<Order> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await apiClient.post(`/orders/${orderId}/complete`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
   return res.data as Order;
 }

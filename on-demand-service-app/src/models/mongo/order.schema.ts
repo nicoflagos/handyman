@@ -24,6 +24,16 @@ export interface IOrderDocument extends Document {
   verificationCode?: string;
   verificationVerifiedAt?: Date;
   verificationVerifiedBy?: Types.ObjectId;
+  price: number;
+  priceConfirmed?: boolean;
+  priceConfirmedAt?: Date;
+  escrowTotal?: number;
+  escrowJobAmount?: number;
+  escrowPlatformFee?: number;
+  escrowFundedAt?: Date;
+  escrowReleasedAt?: Date;
+  beforeImageUrls?: string[];
+  afterImageUrls?: string[];
   customerRating?: { stars: number; note?: string; at: Date };
   handymanRating?: { stars: number; note?: string; at: Date };
   scheduledAt?: Date;
@@ -48,6 +58,16 @@ const OrderSchema = new Schema<IOrderDocument>(
     verificationCode: { type: String, required: false, trim: true, index: false },
     verificationVerifiedAt: { type: Date, required: false },
     verificationVerifiedBy: { type: Schema.Types.ObjectId, ref: 'User', required: false },
+    price: { type: Number, required: false, default: 0, min: 0 },
+    priceConfirmed: { type: Boolean, required: false, default: false, index: true },
+    priceConfirmedAt: { type: Date, required: false },
+    escrowTotal: { type: Number, required: false, min: 0 },
+    escrowJobAmount: { type: Number, required: false, min: 0 },
+    escrowPlatformFee: { type: Number, required: false, min: 0 },
+    escrowFundedAt: { type: Date, required: false },
+    escrowReleasedAt: { type: Date, required: false },
+    beforeImageUrls: { type: [String], default: [] },
+    afterImageUrls: { type: [String], default: [] },
     customerRating: {
       type: {
         stars: { type: Number, required: true, min: 1, max: 5 },

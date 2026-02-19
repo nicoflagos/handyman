@@ -5,24 +5,31 @@ import { Button } from '../ui/Button';
 import { Link } from 'react-router-dom';
 import { InlineNotice } from '../ui/Toast';
 import { listMarketplaceOrders, listMyOrders, Order } from '../services/orders';
-import { getMe, Me, uploadAvatar } from '../services/me';
+import { getMe, listMyTransactions, Me, topUpWallet, Transaction, updateProviderProfile, uploadAvatar } from '../services/me';
 
 export default function Dashboard() {
   const auth = useAuth();
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [market, setMarket] = React.useState<Order[]>([]);
   const [me, setMe] = React.useState<Me | null>(null);
+  const [tx, setTx] = React.useState<Transaction[]>([]);
   const [state, setState] = React.useState<'loading' | 'ready' | 'error'>('loading');
   const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
   const isAdmin = auth.claims?.role === 'admin';
 
   React.useEffect(() => {
     setState('loading');
-    Promise.all([listMyOrders(), isProvider ? listMarketplaceOrders() : Promise.resolve([]), getMe()])
-      .then(([my, m, meRes]) => {
+    Promise.all([
+      listMyOrders(),
+      isProvider ? listMarketplaceOrders() : Promise.resolve([]),
+      getMe(),
+      listMyTransactions().catch(() => [] as Transaction[]),
+    ])
+      .then(([my, m, meRes, txRes]) => {
         setOrders(my);
         setMarket(m);
         setMe(meRes);
+        setTx(txRes);
         setState('ready');
       })
       .catch(() => setState('error'));
@@ -81,6 +88,71 @@ export default function Dashboard() {
               </label>
             </div>
 
+            <div style={{ height: 10 }} />
+            <div className="row" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+              <span className="pill">Wallet: ₦{Number(me?.walletBalance || 0).toLocaleString()}</span>
+              <Button
+                variant="ghost"
+                onClick={async () => {
+                  const raw = prompt('Top-up amount (NGN)', '10000');
+                  if (!raw) return;
+                  const amt = Number(raw);
+                  if (!Number.isFinite(amt) || amt <= 0) return alert('Enter a valid amount');
+                  try {
+                    const updated = await topUpWallet(amt);
+                    setMe(updated);
+                    const nextTx = await listMyTransactions().catch(() => [] as Transaction[]);
+                    setTx(nextTx);
+                  } catch (err: any) {
+                    alert(err?.response?.data?.message || 'Unable to top up wallet');
+                  }
+                }}
+              >
+                Top up wallet
+              </Button>
+              {me?.role === 'customer' && typeof me.ratingAsCustomerAvg === 'number' ? (
+                <span className="pill">
+                  Rating: {me.ratingAsCustomerAvg.toFixed(1)} ({me.ratingAsCustomerCount || 0})
+                </span>
+              ) : null}
+              {me?.role === 'provider' && typeof me.ratingAsHandymanAvg === 'number' ? (
+                <span className="pill">
+                  Rating: {me.ratingAsHandymanAvg.toFixed(1)} ({me.ratingAsHandymanCount || 0})
+                </span>
+              ) : null}
+            </div>
+
+            {me?.role === 'provider' ? (
+              <div style={{ height: 10 }} />
+            ) : null}
+            {me?.role === 'provider' ? (
+              <label className="row" style={{ justifyContent: 'space-between' }}>
+                <span className="muted">Available to take jobs</span>
+                <input
+                  type="checkbox"
+                  checked={me.providerProfile?.available ?? true}
+                  onChange={async e => {
+                    if (!me) return;
+                    const nextAvailable = e.target.checked;
+                    try {
+                      const updated = await updateProviderProfile({
+                        zip: me.providerProfile?.zip,
+                        country: me.providerProfile?.country,
+                        state: me.providerProfile?.state,
+                        lga: me.providerProfile?.lga,
+                        skills: me.providerProfile?.skills || [],
+                        available: nextAvailable,
+                        availabilityNote: me.providerProfile?.availabilityNote,
+                      });
+                      setMe(updated);
+                    } catch (err: any) {
+                      alert(err?.response?.data?.message || 'Unable to update availability');
+                    }
+                  }}
+                />
+              </label>
+            ) : null}
+
             <div className="row" style={{ flexWrap: 'wrap', marginTop: 12 }}>
               {auth.claims?.role === 'customer' ? (
                 <Link to="/services" style={{ textDecoration: 'none' }}>
@@ -124,6 +196,44 @@ export default function Dashboard() {
                   {isProvider ? 'No assigned jobs yet.' : 'No orders yet. Book a service to get started.'}
                 </span>
               ) : null}
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="cardInner">
+            <div className="pill" style={{ marginBottom: 10 }}>
+              Transactions
+            </div>
+            {state === 'loading' ? <span className="muted">Loadingâ€¦</span> : null}
+            <div className="col" style={{ gap: 8 }}>
+              {tx.map(t => (
+                <div
+                  key={t._id}
+                  className="row"
+                  style={{
+                    justifyContent: 'space-between',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(0,0,0,0.12)',
+                    borderRadius: 12,
+                    padding: '10px 12px',
+                    gap: 10,
+                  }}
+                >
+                  <div>
+                    <strong>{t.type}</strong>
+                    <div className="muted" style={{ fontSize: 13 }}>
+                      {new Date(t.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <strong>
+                      {t.direction === 'in' ? '+' : '-'}₦{Number(t.amount).toLocaleString()}
+                    </strong>
+                  </div>
+                </div>
+              ))}
+              {state === 'ready' && tx.length === 0 ? <span className="muted">No transactions yet.</span> : null}
             </div>
           </div>
         </div>

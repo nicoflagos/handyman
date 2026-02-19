@@ -32,6 +32,7 @@ interface IUserDocument extends Document {
   ratingAsCustomerCount?: number;
   ratingAsHandymanAvg?: number;
   ratingAsHandymanCount?: number;
+  walletBalance?: number;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(password: string): Promise<boolean>;
@@ -64,6 +65,7 @@ const UserSchema = new Schema<IUserDocument>({
   ratingAsCustomerCount: { type: Number, default: 0 },
   ratingAsHandymanAvg: { type: Number, default: 0 },
   ratingAsHandymanCount: { type: Number, default: 0 },
+  walletBalance: { type: Number, default: 100000, min: 0 },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

@@ -20,6 +20,11 @@ export type Me = {
   phone?: string;
   gender?: 'male' | 'female' | 'other';
   avatarUrl?: string;
+  walletBalance?: number;
+  ratingAsCustomerAvg?: number;
+  ratingAsCustomerCount?: number;
+  ratingAsHandymanAvg?: number;
+  ratingAsHandymanCount?: number;
   role: 'customer' | 'provider' | 'admin';
   providerProfile?: ProviderProfile;
 };
@@ -38,5 +43,25 @@ export async function uploadAvatar(file: File): Promise<Me> {
   const form = new FormData();
   form.append('file', file);
   const res = await apiClient.post('/me/avatar', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  return res.data as Me;
+}
+
+export type Transaction = {
+  _id: string;
+  direction: 'in' | 'out';
+  type: string;
+  amount: number;
+  currency: 'NGN';
+  ref?: string;
+  createdAt: string;
+};
+
+export async function listMyTransactions(): Promise<Transaction[]> {
+  const res = await apiClient.get('/me/transactions');
+  return res.data as Transaction[];
+}
+
+export async function topUpWallet(amount: number): Promise<Me> {
+  const res = await apiClient.post('/wallet/topup', { amount });
   return res.data as Me;
 }

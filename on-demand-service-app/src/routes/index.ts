@@ -30,6 +30,8 @@ router.get('/services', (req, res) => servicesController.list(req, res));
 // User routes
 router.get('/me', authMiddleware, (req, res) => userController.getMe(req as any, res));
 router.post('/me/avatar', authMiddleware, upload.single('file'), (req, res) => userController.uploadAvatar(req as any, res));
+router.get('/me/transactions', authMiddleware, (req, res) => userController.listMyTransactions(req as any, res));
+router.post('/wallet/topup', authMiddleware, (req, res) => userController.topUpWallet(req as any, res));
 router.put('/providers/me', authMiddleware, (req, res) => userController.updateProviderProfile(req as any, res));
 router.get('/users/:id', authMiddleware, (req, res) => userController.getUserProfile(req, res));
 router.put('/users/:id', authMiddleware, (req, res) => userController.updateUserProfile(req, res));
@@ -42,6 +44,9 @@ router.get('/orders/:id', authMiddleware, (req, res) => ordersController.getOrde
 router.post('/orders/:id/accept', authMiddleware, (req, res) => ordersController.acceptOrder(req as any, res));
 router.post('/orders/:id/status', authMiddleware, (req, res) => ordersController.setStatus(req as any, res));
 router.post('/orders/:id/rate', authMiddleware, (req, res) => ordersController.rateOrder(req as any, res));
+router.post('/orders/:id/confirm-price', authMiddleware, (req, res) => ordersController.confirmPrice(req as any, res));
+router.post('/orders/:id/start', authMiddleware, upload.single('file'), (req, res) => ordersController.startOrder(req as any, res));
+router.post('/orders/:id/complete', authMiddleware, upload.single('file'), (req, res) => ordersController.completeOrder(req as any, res));
 
 export function setRoutes(app: Express) {
   app.use('/api', router);

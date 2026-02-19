@@ -26,6 +26,7 @@ export default function CreateOrder() {
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState<NigeriaLocationValue>({ state: '', lga: '', street: '' });
   const [scheduledAt, setScheduledAt] = useState('');
+  const [price, setPrice] = useState('');
 
   const address = useMemo(() => {
     const parts = [
@@ -60,6 +61,7 @@ export default function CreateOrder() {
         country: 'Nigeria',
         state: location.state,
         lga: location.lga,
+        price: Number(price),
         scheduledAt: scheduledAt || undefined,
       });
       navigate(`/orders/${order._id}`, { replace: true });
@@ -134,6 +136,14 @@ export default function CreateOrder() {
                 />
               </label>
               <NigeriaLocationSelect value={location} onChange={setLocation} />
+              <Input
+                label="Price (NGN)"
+                value={price}
+                onChange={e => setPrice(e.target.value)}
+                inputMode="numeric"
+                placeholder="e.g. 5000"
+                hint="Enter your proposed job fee."
+              />
               <Input
                 label="Preferred date/time"
                 value={scheduledAt}

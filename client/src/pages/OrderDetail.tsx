@@ -1,6 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Layout } from '../components/Layout';
-import { acceptOrder, getOrder, Order, OrderStatus, rateOrder, setOrderStatus } from '../services/orders';
+import {
+  acceptOrder,
+  completeOrder,
+  confirmOrderPrice,
+  getOrder,
+  Order,
+  OrderStatus,
+  rateOrder,
+  setOrderStatus,
+  startOrder,
+} from '../services/orders';
 import { InlineNotice } from '../ui/Toast';
 import { Button } from '../ui/Button';
 import { Link, useParams } from 'react-router-dom';
@@ -39,6 +49,9 @@ export default function OrderDetail() {
   const [ratingStars, setRatingStars] = useState(5);
   const [ratingNote, setRatingNote] = useState('');
   const [ratingBusy, setRatingBusy] = useState(false);
+  const [beforeImage, setBeforeImage] = useState<File | null>(null);
+  const [afterImage, setAfterImage] = useState<File | null>(null);
+  const [priceBusy, setPriceBusy] = useState(false);
 
   const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
   const isCustomer = auth.claims?.role === 'customer';
@@ -119,6 +132,52 @@ export default function OrderDetail() {
     }
   }
 
+  async function confirmPrice() {
+    if (!order) return;
+    setError(null);
+    setPriceBusy(true);
+    try {
+      const updated = await confirmOrderPrice(order._id);
+      setOrder(updated);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Unable to confirm price');
+    } finally {
+      setPriceBusy(false);
+    }
+  }
+
+  async function startWithProof() {
+    if (!order) return;
+    if (!beforeImage) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const updated = await startOrder(order._id, { verificationCode: verificationCode || undefined, file: beforeImage });
+      setOrder(updated);
+      setBeforeImage(null);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Unable to start order');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function completeWithProof() {
+    if (!order) return;
+    if (!afterImage) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const updated = await completeOrder(order._id, afterImage);
+      setOrder(updated);
+      setAfterImage(null);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Unable to complete order');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <Layout>
       <div className="col" style={{ gap: 16 }}>
@@ -159,16 +218,13 @@ export default function OrderDetail() {
                       </Button>
                     ) : null}
                     {isProvider && order.status === 'accepted' ? (
-                      <Button
-                        loading={busy}
-                        onClick={() => run(() => setOrderStatus(order._id, 'in_progress', undefined, verificationCode))}
-                      >
-                        Start
+                      <Button loading={busy} onClick={startWithProof} disabled={!order.priceConfirmed || !beforeImage}>
+                        Start (with before image)
                       </Button>
                     ) : null}
                     {isProvider && order.status === 'in_progress' ? (
-                      <Button loading={busy} onClick={() => run(() => setOrderStatus(order._id, 'completed'))}>
-                        Complete
+                      <Button loading={busy} onClick={completeWithProof} disabled={!afterImage}>
+                        Complete (with after image)
                       </Button>
                     ) : null}
                     {order.status !== 'completed' && order.status !== 'canceled' ? (
@@ -188,12 +244,23 @@ export default function OrderDetail() {
                 <div style={{ height: 14 }} />
                 <div className="row" style={{ flexWrap: 'wrap' }}>
                   <span className="pill">Service: {order.serviceKey}</span>
+                  <span className="pill">Price: ₦{Number(order.price || 0).toLocaleString()}</span>
+                  <span className="pill">Price confirmed: {order.priceConfirmed ? 'Yes' : 'No'}</span>
                   {order.address ? <span className="pill">Address: {order.address}</span> : null}
                   {order.scheduledAt ? <span className="pill">When: {formatDate(order.scheduledAt)}</span> : null}
                   {isCustomer && order.verificationCode ? (
                     <span className="pill">Verification code: {order.verificationCode}</span>
                   ) : null}
                 </div>
+
+                {isProvider && order.status === 'in_progress' ? (
+                  <div style={{ marginTop: 12 }}>
+                    <label style={{ display: 'grid', gap: 6 }}>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>After image</span>
+                      <input type="file" accept="image/*" onChange={e => setAfterImage(e.target.files?.[0] || null)} />
+                    </label>
+                  </div>
+                ) : null}
 
                 {order.status !== 'requested' && order.providerId && (order.customerInfo || order.handymanInfo) ? (
                   <div style={{ marginTop: 14 }}>
@@ -227,6 +294,12 @@ export default function OrderDetail() {
                           </span>
                           {order.customerInfo.gender ? <span className="pill">Gender: {order.customerInfo.gender}</span> : null}
                           {order.customerInfo.phone ? <span className="pill">Phone: {order.customerInfo.phone}</span> : null}
+                          {typeof order.customerInfo.ratingAsCustomerAvg === 'number' &&
+                          typeof order.customerInfo.ratingAsCustomerCount === 'number' ? (
+                            <span className="pill">
+                              Rating: {order.customerInfo.ratingAsCustomerAvg.toFixed(1)} ({order.customerInfo.ratingAsCustomerCount})
+                            </span>
+                          ) : null}
                         </div>
                       ) : null}
 
@@ -256,6 +329,12 @@ export default function OrderDetail() {
                           </span>
                           {order.handymanInfo.gender ? <span className="pill">Gender: {order.handymanInfo.gender}</span> : null}
                           {order.handymanInfo.phone ? <span className="pill">Phone: {order.handymanInfo.phone}</span> : null}
+                          {typeof order.handymanInfo.ratingAsHandymanAvg === 'number' &&
+                          typeof order.handymanInfo.ratingAsHandymanCount === 'number' ? (
+                            <span className="pill">
+                              Rating: {order.handymanInfo.ratingAsHandymanAvg.toFixed(1)} ({order.handymanInfo.ratingAsHandymanCount})
+                            </span>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>
@@ -264,6 +343,14 @@ export default function OrderDetail() {
 
                 {isProvider && order.status === 'accepted' ? (
                   <div style={{ marginTop: 12 }}>
+                    {!order.priceConfirmed ? (
+                      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                        <span className="muted">Confirm the customer’s price before starting.</span>
+                        <Button variant="ghost" loading={priceBusy} onClick={confirmPrice}>
+                          Confirm price
+                        </Button>
+                      </div>
+                    ) : null}
                     <label style={{ display: 'grid', gap: 6 }}>
                       <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Customer verification code</span>
                       <input
@@ -281,6 +368,10 @@ export default function OrderDetail() {
                           outline: 'none',
                         }}
                       />
+                    </label>
+                    <label style={{ display: 'grid', gap: 6, marginTop: 10 }}>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Before image</span>
+                      <input type="file" accept="image/*" onChange={e => setBeforeImage(e.target.files?.[0] || null)} />
                     </label>
                   </div>
                 ) : null}
