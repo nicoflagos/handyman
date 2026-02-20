@@ -120,6 +120,21 @@ export class OrdersController {
         return res.status(400).json({ message: 'serviceKey, title, country, state, lga, and price are required' });
       }
 
+      // Ensure customer can afford job fee + 10% platform fee (commission).
+      const platformFee = Math.round(nPrice * 0.1);
+      const total = nPrice + platformFee;
+      const customer: any = await this.userService.getById(req.userId);
+      if (!customer) return res.status(400).json({ message: 'Customer not found' });
+      if (typeof customer.walletBalance !== 'number') {
+        customer.walletBalance = 100000;
+        await customer.save();
+      }
+      if (customer.walletBalance < total) {
+        return res
+          .status(400)
+          .json({ message: `Insufficient wallet balance. Need ₦${total} (₦${nPrice} + ₦${platformFee} fee).` });
+      }
+
       const customerId = new Types.ObjectId(req.userId);
       const order = await this.orderService.createOrder({
         customerId,

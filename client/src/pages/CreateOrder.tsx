@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Layout } from '../components/Layout';
 import { listServices, ServiceItem } from '../services/catalog';
 import { createOrder } from '../services/orders';
+import { getMe } from '../services/me';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { InlineNotice } from '../ui/Toast';
@@ -20,6 +21,7 @@ export default function CreateOrder() {
   const [loadingServices, setLoadingServices] = useState(true);
   const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   const [serviceKey, setServiceKey] = useState(query.get('service') || 'handyman');
   const [title, setTitle] = useState('');
@@ -44,11 +46,30 @@ export default function CreateOrder() {
       .finally(() => setLoadingServices(false));
   }, []);
 
+  useEffect(() => {
+    getMe()
+      .then(me => setWalletBalance(typeof me.walletBalance === 'number' ? me.walletBalance : 0))
+      .catch(() => setWalletBalance(null));
+  }, []);
+
+  const numericPrice = Number(price);
+  const platformFee = Number.isFinite(numericPrice) && numericPrice > 0 ? Math.round(numericPrice * 0.1) : 0;
+  const totalDue = Number.isFinite(numericPrice) && numericPrice > 0 ? numericPrice + platformFee : 0;
+  const insufficientFunds = walletBalance !== null && totalDue > 0 && walletBalance < totalDue;
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!location.state || !location.lga) {
       setError('Please select your State and LGA.');
+      return;
+    }
+    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+      setError('Please enter a valid price.');
+      return;
+    }
+    if (insufficientFunds) {
+      setError(`Insufficient wallet balance. Need ₦${totalDue.toLocaleString()} (₦${numericPrice.toLocaleString()} + ₦${platformFee.toLocaleString()} fee).`);
       return;
     }
     setSubmitState('submitting');
@@ -61,7 +82,7 @@ export default function CreateOrder() {
         country: 'Nigeria',
         state: location.state,
         lga: location.lga,
-        price: Number(price),
+        price: numericPrice,
         scheduledAt: scheduledAt || undefined,
       });
       navigate(`/orders/${order._id}`, { replace: true });
@@ -142,7 +163,12 @@ export default function CreateOrder() {
                 onChange={e => setPrice(e.target.value)}
                 inputMode="numeric"
                 placeholder="e.g. 5000"
-                hint="Enter your proposed job fee."
+                hint={
+                  walletBalance === null
+                    ? 'Enter your proposed job fee.'
+                    : `Wallet: ₦${walletBalance.toLocaleString()}. Total (fee+10%): ₦${totalDue.toLocaleString()}.`
+                }
+                error={insufficientFunds ? 'Insufficient wallet balance for this booking.' : null}
               />
               <Input
                 label="Preferred date/time"
@@ -154,7 +180,7 @@ export default function CreateOrder() {
               {error ? <InlineNotice kind="error">{error}</InlineNotice> : null}
 
               <div className="row" style={{ justifyContent: 'space-between' }}>
-                <Button type="submit" loading={submitState === 'submitting'}>
+                <Button type="submit" loading={submitState === 'submitting'} disabled={insufficientFunds}>
                   Submit request
                 </Button>
                 <span className="muted" style={{ fontSize: 13 }}>
