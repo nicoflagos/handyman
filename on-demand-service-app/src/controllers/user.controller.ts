@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { Transaction } from '../models/mongo/transaction.schema';
+import { getUploadsRootDir } from '../utils/uploads';
 
 type AuthRequest = Request & { userId?: string };
 
@@ -98,7 +99,7 @@ export class UserController {
                         ? 'gif'
                         : 'jpg';
 
-            const uploadsDir = path.resolve(process.cwd(), 'uploads', 'profile');
+            const uploadsDir = path.join(getUploadsRootDir(), 'profile');
             fs.mkdirSync(uploadsDir, { recursive: true });
 
             const name = `${req.userId}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;

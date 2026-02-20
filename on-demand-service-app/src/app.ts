@@ -5,6 +5,7 @@ import config from './config/index';
 import connectDB from './db';
 import path from 'path';
 import fs from 'fs';
+import { getUploadsRootDir } from './utils/uploads';
 
 const app = express();
 const PORT = config.port || 3000;
@@ -15,7 +16,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files (e.g. profile pictures)
-app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
+app.use('/uploads', express.static(getUploadsRootDir()));
 
 // Health check
 app.get('/health', (_req, res) => {
