@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -39,9 +39,13 @@ function RequireAnyRole({
 }
 
 export default function App() {
+  // GitHub Pages serves the app from a subpath and doesn't support SPA refresh routing,
+  // so we switch to HashRouter when Vite is built with a non-root base.
+  const Router = import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/' ? HashRouter : BrowserRouter;
+
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <Router>
         <Routes>
           <Route
             path="/"
@@ -103,7 +107,7 @@ export default function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
+      </Router>
     </AuthProvider>
   );
 }
