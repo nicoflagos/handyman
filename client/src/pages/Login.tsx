@@ -10,6 +10,7 @@ import { InlineNotice } from '../ui/Toast';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const auth = useAuth();
@@ -51,12 +52,21 @@ export default function Login() {
               />
               <Input
                 label="Password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 autoComplete="current-password"
                 placeholder="Your password"
               />
+              <label className="row" style={{ justifyContent: 'space-between' }}>
+                <span className="muted" style={{ fontSize: 13 }}>
+                  Show password
+                </span>
+                <label className="switch" aria-label="Show password toggle">
+                  <input type="checkbox" checked={showPassword} onChange={e => setShowPassword(e.target.checked)} />
+                  <span className="switchSlider" />
+                </label>
+              </label>
               {error ? <InlineNotice kind="error">{error}</InlineNotice> : null}
               <div className="row" style={{ justifyContent: 'space-between', marginTop: 4 }}>
                 <Button type="submit" loading={loading}>
@@ -85,4 +95,3 @@ export default function Login() {
     </Layout>
   );
 }
-
