@@ -19,7 +19,12 @@ function initIfNeeded() {
   }
 
   try {
-    const cred = JSON.parse(raw);
+    const trimmed = raw.trim();
+    const jsonText =
+      trimmed.startsWith('base64:')
+        ? Buffer.from(trimmed.slice('base64:'.length), 'base64').toString('utf8')
+        : trimmed;
+    const cred = JSON.parse(jsonText);
     if (!admin.apps.length) {
       admin.initializeApp({ credential: admin.credential.cert(cred) });
     }
@@ -67,4 +72,3 @@ export class PushService {
 }
 
 export const pushService = new PushService();
-
