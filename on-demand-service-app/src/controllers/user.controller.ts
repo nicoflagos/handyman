@@ -153,4 +153,30 @@ export class UserController {
             return res.status(500).json({ message: 'Server error', error });
         }
     }
+
+    async registerPushToken(req: AuthRequest, res: Response) {
+        try {
+            if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+            const { token } = req.body || {};
+            const clean = String(token || '').trim();
+            if (!clean) return res.status(400).json({ message: 'token is required' });
+            const updated = await this.userService.addPushToken(new Types.ObjectId(req.userId), clean);
+            return res.status(200).json(updated);
+        } catch (error) {
+            return res.status(500).json({ message: 'Server error', error });
+        }
+    }
+
+    async unregisterPushToken(req: AuthRequest, res: Response) {
+        try {
+            if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+            const { token } = req.body || {};
+            const clean = String(token || '').trim();
+            if (!clean) return res.status(400).json({ message: 'token is required' });
+            const updated = await this.userService.removePushToken(new Types.ObjectId(req.userId), clean);
+            return res.status(200).json(updated);
+        } catch (error) {
+            return res.status(500).json({ message: 'Server error', error });
+        }
+    }
 }

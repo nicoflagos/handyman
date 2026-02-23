@@ -26,6 +26,20 @@ export class UserService {
       .exec();
   }
 
+  async addPushToken(userId: Types.ObjectId, token: string) {
+    const clean = token.trim();
+    if (!clean) return null;
+    await User.updateOne({ _id: userId }, { $addToSet: { pushTokens: clean } }).exec();
+    return User.findById(userId).select('-password').exec();
+  }
+
+  async removePushToken(userId: Types.ObjectId, token: string) {
+    const clean = token.trim();
+    if (!clean) return null;
+    await User.updateOne({ _id: userId }, { $pull: { pushTokens: clean } }).exec();
+    return User.findById(userId).select('-password').exec();
+  }
+
   async getRole(userId: Types.ObjectId): Promise<'customer' | 'provider' | 'admin'> {
     const user = await User.findById(userId).select('role').exec();
     return (user as any)?.role || 'customer';

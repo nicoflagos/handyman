@@ -8,6 +8,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { Transaction } from '../models/mongo/transaction.schema';
 import { getUploadsRootDir } from '../utils/uploads';
+import { pushService } from '../services/push.service';
 
 type AuthRequest = Request & { userId?: string };
 
@@ -210,6 +211,31 @@ export class OrdersController {
         providerId: new Types.ObjectId(req.userId),
       });
       if (!order) return res.status(404).json({ message: 'Order not found' });
+
+      // Push notifications (best-effort).
+      const orderId = String((order as any)._id);
+      const title = String((order as any).title || 'Order');
+      const customerId = (order as any).customerId as Types.ObjectId | undefined;
+      const providerId = (order as any).providerId as Types.ObjectId | undefined;
+      if (customerId) {
+        void pushService
+          .notifyUser(customerId, {
+            title: 'Order accepted',
+            body: `Your order "${title}" was accepted by a handyman.`,
+            data: { event: 'order_accepted', orderId },
+          })
+          .catch(err => console.log(`[push] order accepted -> customer failed: ${(err as any)?.message || err}`));
+      }
+      if (providerId) {
+        void pushService
+          .notifyUser(providerId, {
+            title: 'Order accepted',
+            body: `You accepted "${title}".`,
+            data: { event: 'order_accepted', orderId },
+          })
+          .catch(err => console.log(`[push] order accepted -> handyman failed: ${(err as any)?.message || err}`));
+      }
+
       return res.status(200).json(order);
     } catch (error: any) {
       return res.status(400).json({ message: error.message || 'Unable to accept order' });
@@ -352,6 +378,20 @@ export class OrdersController {
       (order as any).priceConfirmed = true;
       (order as any).priceConfirmedAt = new Date();
       await (order as any).save();
+
+      const orderId = String((order as any)._id);
+      const title = String((order as any).title || 'Order');
+      const customerId = (order as any).customerId as Types.ObjectId | undefined;
+      if (customerId) {
+        void pushService
+          .notifyUser(customerId, {
+            title: 'Price confirmed',
+            body: `Handyman confirmed price for "${title}".`,
+            data: { event: 'price_confirmed', orderId },
+          })
+          .catch(err => console.log(`[push] price confirmed -> customer failed: ${(err as any)?.message || err}`));
+      }
+
       return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
     } catch (error) {
       return res.status(500).json({ message: 'Error confirming price', error });
@@ -429,6 +469,34 @@ export class OrdersController {
       order.status = 'in_progress';
       order.timeline.push({ status: 'in_progress', at: new Date(), by: actorId });
       await order.save();
+
+      // Push notifications (best-effort).
+      const orderId = String(order._id);
+      const title = String(order.title || 'Order');
+      const jobFee = Number(order.escrowJobAmount || order.price || 0);
+      const platformFee = Number(order.escrowPlatformFee || Math.round(jobFee * 0.1));
+      const total = jobFee + platformFee;
+      const fmt = (n: number) => `₦${Math.round(n).toLocaleString('en-NG')}`;
+
+      if (order.customerId) {
+        void pushService
+          .notifyUser(order.customerId, {
+            title: 'Job started',
+            body: `Job started for "${title}". ${fmt(total)} held in escrow.`,
+            data: { event: 'order_in_progress', orderId },
+          })
+          .catch(err => console.log(`[push] order in_progress -> customer failed: ${(err as any)?.message || err}`));
+      }
+      if (order.providerId) {
+        void pushService
+          .notifyUser(order.providerId, {
+            title: 'Job started',
+            body: `You started "${title}". Escrow funded (${fmt(jobFee)} + ${fmt(platformFee)} fee).`,
+            data: { event: 'order_in_progress', orderId },
+          })
+          .catch(err => console.log(`[push] order in_progress -> handyman failed: ${(err as any)?.message || err}`));
+      }
+
       return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
     } catch (error: any) {
       return res.status(400).json({ message: error?.message || 'Unable to start order' });
@@ -493,6 +561,30 @@ export class OrdersController {
       order.status = 'completed';
       order.timeline.push({ status: 'completed', at: new Date(), by: actorId });
       await order.save();
+
+      // Push notifications (best-effort).
+      const orderId = String(order._id);
+      const title = String(order.title || 'Order');
+      const fmt = (n: number) => `₦${Math.round(n).toLocaleString('en-NG')}`;
+      if (order.customerId) {
+        void pushService
+          .notifyUser(order.customerId, {
+            title: 'Job completed',
+            body: `Job completed for "${title}". Escrow released.`,
+            data: { event: 'order_completed', orderId },
+          })
+          .catch(err => console.log(`[push] order completed -> customer failed: ${(err as any)?.message || err}`));
+      }
+      if (order.providerId) {
+        void pushService
+          .notifyUser(order.providerId, {
+            title: 'Payment released',
+            body: `Payment released for "${title}". You received ${fmt(payout)} (commission ${fmt(commission)}).`,
+            data: { event: 'escrow_released', orderId },
+          })
+          .catch(err => console.log(`[push] order completed -> handyman failed: ${(err as any)?.message || err}`));
+      }
+
       return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
     } catch (error: any) {
       return res.status(400).json({ message: error?.message || 'Unable to complete order' });

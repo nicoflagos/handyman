@@ -30,6 +30,8 @@ router.get('/services', (req, res) => servicesController.list(req, res));
 // User routes
 router.get('/me', authMiddleware, (req, res) => userController.getMe(req as any, res));
 router.post('/me/avatar', authMiddleware, upload.single('file'), (req, res) => userController.uploadAvatar(req as any, res));
+router.post('/me/push-token', authMiddleware, (req, res) => userController.registerPushToken(req as any, res));
+router.delete('/me/push-token', authMiddleware, (req, res) => userController.unregisterPushToken(req as any, res));
 router.get('/me/transactions', authMiddleware, (req, res) => userController.listMyTransactions(req as any, res));
 router.post('/wallet/topup', authMiddleware, (req, res) => userController.topUpWallet(req as any, res));
 router.put('/providers/me', authMiddleware, (req, res) => userController.updateProviderProfile(req as any, res));
