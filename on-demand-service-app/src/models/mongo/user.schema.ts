@@ -9,6 +9,7 @@ export type ProviderProfile = {
   country?: string;
   state?: string;
   lga?: string;
+  lc?: string;
   skills: string[];
   available: boolean;
   availabilityNote?: string;
@@ -58,6 +59,7 @@ const UserSchema = new Schema<IUserDocument>({
     country: { type: String, required: false, trim: true },
     state: { type: String, required: false, trim: true },
     lga: { type: String, required: false, trim: true },
+    lc: { type: String, required: false, trim: true },
     skills: { type: [String], default: [] },
     available: { type: Boolean, default: true },
     availabilityNote: { type: String, required: false },

@@ -21,6 +21,7 @@ export interface IOrderDocument extends Document {
   country: string;
   state: string;
   lga: string;
+  lc?: string;
   verificationCode?: string;
   verificationVerifiedAt?: Date;
   verificationVerifiedBy?: Types.ObjectId;
@@ -55,6 +56,7 @@ const OrderSchema = new Schema<IOrderDocument>(
     country: { type: String, required: true, trim: true, index: true },
     state: { type: String, required: true, trim: true, index: true },
     lga: { type: String, required: true, trim: true, index: true },
+    lc: { type: String, required: false, trim: true, index: true },
     verificationCode: { type: String, required: false, trim: true, index: false },
     verificationVerifiedAt: { type: Date, required: false },
     verificationVerifiedBy: { type: Schema.Types.ObjectId, ref: 'User', required: false },

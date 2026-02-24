@@ -35,12 +35,13 @@ export class UserController {
             const role = await this.userService.getRole(userId);
             if (role !== 'provider' && role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
-            const { zip, country, state, lga, skills, available, availabilityNote } = req.body || {};
+            const { zip, country, state, lga, lc, skills, available, availabilityNote } = req.body || {};
             const updated = await this.userService.updateProviderProfile(userId, {
                 zip,
                 country,
                 state,
                 lga,
+                lc,
                 skills,
                 available,
                 availabilityNote,

@@ -180,6 +180,7 @@ export default function Dashboard() {
                           country: me.providerProfile?.country,
                           state: me.providerProfile?.state,
                           lga: me.providerProfile?.lga,
+                          lc: me.providerProfile?.lc,
                           skills: me.providerProfile?.skills || [],
                           available: nextAvailable,
                           availabilityNote: me.providerProfile?.availabilityNote,

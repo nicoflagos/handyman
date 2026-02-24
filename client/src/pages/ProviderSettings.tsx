@@ -8,7 +8,7 @@ import { NigeriaLocationSelect, NigeriaLocationValue } from '../components/Niger
 
 export default function ProviderSettings() {
   const [services, setServices] = React.useState<ServiceItem[]>([]);
-  const [location, setLocation] = React.useState<NigeriaLocationValue>({ state: '', lga: '', street: '' });
+  const [location, setLocation] = React.useState<NigeriaLocationValue>({ state: '', lga: '', lc: '', street: '' });
   const [available, setAvailable] = React.useState(true);
   const [availabilityNote, setAvailabilityNote] = React.useState('');
   const [skills, setSkills] = React.useState<Record<string, boolean>>({});
@@ -21,7 +21,12 @@ export default function ProviderSettings() {
     Promise.all([getMe(), listServices()])
       .then(([me, svc]) => {
         setServices(svc);
-        setLocation({ state: me.providerProfile?.state || '', lga: me.providerProfile?.lga || '', street: '' });
+        setLocation({
+          state: me.providerProfile?.state || '',
+          lga: me.providerProfile?.lga || '',
+          lc: me.providerProfile?.lc || '',
+          street: '',
+        });
         setAvailable(me.providerProfile?.available ?? true);
         setAvailabilityNote(me.providerProfile?.availabilityNote || '');
         const map: Record<string, boolean> = {};
@@ -34,8 +39,8 @@ export default function ProviderSettings() {
 
   async function save() {
     setMsg(null);
-    if (!location.state || !location.lga) {
-      setMsg({ kind: 'error', text: 'Please select your State and LGA.' });
+    if (!location.state || !location.lga || !location.lc) {
+      setMsg({ kind: 'error', text: 'Please select your State, LGA, and Local Council.' });
       return;
     }
     setSaving(true);
@@ -47,6 +52,7 @@ export default function ProviderSettings() {
         country: 'Nigeria',
         state: location.state,
         lga: location.lga,
+        lc: location.lc,
         skills: selected,
         available,
         availabilityNote,
@@ -66,7 +72,7 @@ export default function ProviderSettings() {
           <div className="cardInner">
             <h2 style={{ marginTop: 0, marginBottom: 6 }}>Handyman settings</h2>
             <p className="muted" style={{ marginTop: 0 }}>
-              Marketplace matching uses your Country + State + LGA + selected skills. Availability is a simple toggle for v1.
+              Marketplace matching uses your Country + State + LGA + LC + selected skills. Availability is a simple toggle for v1.
             </p>
 
             {state === 'error' ? <InlineNotice kind="error">Unable to load settings.</InlineNotice> : null}
@@ -143,7 +149,7 @@ export default function ProviderSettings() {
             </div>
             <ol className="muted" style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 8 }}>
               <li>Order must be unassigned and “requested”</li>
-              <li>Order Country + State + LGA must match your profile</li>
+              <li>Order Country + State + LGA + LC must match your profile</li>
               <li>Order service must be one of your skills</li>
               <li>If you’re unavailable, you’ll see no jobs</li>
             </ol>

@@ -57,6 +57,7 @@ export class UserService {
       country?: string;
       state?: string;
       lga?: string;
+      lc?: string;
       skills?: string[];
       available?: boolean;
       availabilityNote?: string;
@@ -67,6 +68,7 @@ export class UserService {
     if (typeof input.country === 'string') update['providerProfile.country'] = input.country.trim();
     if (typeof input.state === 'string') update['providerProfile.state'] = input.state.trim();
     if (typeof input.lga === 'string') update['providerProfile.lga'] = input.lga.trim();
+    if (typeof input.lc === 'string') update['providerProfile.lc'] = input.lc.trim();
     if (Array.isArray(input.skills)) update['providerProfile.skills'] = input.skills;
     if (typeof input.available === 'boolean') update['providerProfile.available'] = input.available;
     if (typeof input.availabilityNote === 'string') update['providerProfile.availabilityNote'] = input.availabilityNote;

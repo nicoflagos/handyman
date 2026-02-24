@@ -6,6 +6,7 @@ export type ProviderProfile = {
   country?: string;
   state?: string;
   lga?: string;
+  lc?: string;
   skills: string[];
   available: boolean;
   availabilityNote?: string;

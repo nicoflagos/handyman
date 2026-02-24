@@ -26,6 +26,7 @@ export type Order = {
   country: string;
   state: string;
   lga: string;
+  lc?: string;
   price: number;
   priceConfirmed?: boolean;
   verificationCode?: string;
@@ -64,6 +65,7 @@ export async function createOrder(input: {
   country: string;
   state: string;
   lga: string;
+  lc: string;
   price: number;
   scheduledAt?: string;
 }): Promise<Order> {

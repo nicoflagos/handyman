@@ -26,19 +26,20 @@ export default function CreateOrder() {
   const [serviceKey, setServiceKey] = useState(query.get('service') || 'handyman');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [location, setLocation] = useState<NigeriaLocationValue>({ state: '', lga: '', street: '' });
+  const [location, setLocation] = useState<NigeriaLocationValue>({ state: '', lga: '', lc: '', street: '' });
   const [scheduledAt, setScheduledAt] = useState('');
   const [price, setPrice] = useState('');
 
   const address = useMemo(() => {
     const parts = [
       location.street?.trim(),
+      location.lc?.trim(),
       location.lga ? `${location.lga} LGA` : '',
       location.state?.trim(),
       'Nigeria',
     ].filter(Boolean);
     return parts.join(', ');
-  }, [location.lga, location.state, location.street]);
+  }, [location.lc, location.lga, location.state, location.street]);
 
   useEffect(() => {
     listServices()
@@ -60,12 +61,12 @@ export default function CreateOrder() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!location.state || !location.lga) {
-      setError('Please select your State and LGA.');
+    if (!location.state || !location.lga || !location.lc) {
+      setError('Please select your State, LGA, and Local Council.');
       return;
     }
     if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
-      setError('Please enter a valid price.');
+      setError('Please enter a valid service fee.');
       return;
     }
     if (insufficientFunds) {
@@ -82,6 +83,7 @@ export default function CreateOrder() {
         country: 'Nigeria',
         state: location.state,
         lga: location.lga,
+        lc: location.lc,
         price: numericPrice,
         scheduledAt: scheduledAt || undefined,
       });
@@ -158,14 +160,14 @@ export default function CreateOrder() {
               </label>
               <NigeriaLocationSelect value={location} onChange={setLocation} />
               <Input
-                label="Price (NGN)"
+                label="Service fee (NGN)"
                 value={price}
                 onChange={e => setPrice(e.target.value)}
                 inputMode="numeric"
                 placeholder="e.g. 5000"
                 hint={
                   walletBalance === null
-                    ? 'Enter your proposed job fee.'
+                    ? 'Service fee only (excludes cost of materials).'
                     : `Wallet: ₦${walletBalance.toLocaleString()}. Total (fee+10%): ₦${totalDue.toLocaleString()}.`
                 }
                 error={insufficientFunds ? 'Insufficient wallet balance for this booking.' : null}

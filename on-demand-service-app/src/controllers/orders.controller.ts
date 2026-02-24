@@ -90,8 +90,8 @@ export class OrdersController {
       const provider = await this.userService.getProviderProfile(providerId);
       const profile = provider?.providerProfile;
       if (!profile?.available) return res.status(200).json([]);
-      if (!profile?.country || !profile?.state || !profile?.lga) {
-        return res.status(400).json({ message: 'Set your handyman Country, State, and LGA before browsing the marketplace' });
+      if (!profile?.country || !profile?.state || !profile?.lga || !profile?.lc) {
+        return res.status(400).json({ message: 'Set your handyman Country, State, LGA, and Local Council before browsing the marketplace' });
       }
       if (!Array.isArray(profile.skills) || profile.skills.length === 0) {
         return res.status(400).json({ message: 'Select at least one skill before browsing the marketplace' });
@@ -102,6 +102,7 @@ export class OrdersController {
         country: profile.country,
         state: profile.state,
         lga: profile.lga,
+        lc: profile.lc,
         serviceKeys: profile.skills,
       });
       return res.status(200).json(orders);
@@ -115,10 +116,10 @@ export class OrdersController {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
       const role = await this.userService.getRole(new Types.ObjectId(req.userId));
       if (role !== 'customer') return res.status(403).json({ message: 'Only customers can create orders' });
-      const { serviceKey, title, description, address, scheduledAt, country, state, lga, price } = req.body || {};
+      const { serviceKey, title, description, address, scheduledAt, country, state, lga, lc, price } = req.body || {};
       const nPrice = Number(price);
-      if (!serviceKey || !title || !country || !state || !lga || !Number.isFinite(nPrice) || nPrice <= 0) {
-        return res.status(400).json({ message: 'serviceKey, title, country, state, lga, and price are required' });
+      if (!serviceKey || !title || !country || !state || !lga || !lc || !Number.isFinite(nPrice) || nPrice <= 0) {
+        return res.status(400).json({ message: 'serviceKey, title, country, state, lga, lc, and price are required' });
       }
 
       // Ensure customer can afford job fee + 10% platform fee (commission).
@@ -146,6 +147,7 @@ export class OrdersController {
         country,
         state,
         lga,
+        lc,
         price: nPrice,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
       });

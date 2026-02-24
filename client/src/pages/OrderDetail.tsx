@@ -192,9 +192,6 @@ export default function OrderDetail() {
             <Link to="/dashboard" style={{ textDecoration: 'none' }}>
               <Button variant="ghost">Dashboard</Button>
             </Link>
-            <Link to="/services" style={{ textDecoration: 'none' }}>
-              <Button variant="ghost">Catalog</Button>
-            </Link>
           </div>
         </div>
 
@@ -244,8 +241,8 @@ export default function OrderDetail() {
                 <div style={{ height: 14 }} />
                 <div className="row" style={{ flexWrap: 'wrap' }}>
                   <span className="pill">Service: {order.serviceKey}</span>
-                  <span className="pill">Price: ₦{Number(order.price || 0).toLocaleString()}</span>
-                  <span className="pill">Price confirmed: {order.priceConfirmed ? 'Yes' : 'No'}</span>
+                  <span className="pill">Service fee: ₦{Number(order.price || 0).toLocaleString()}</span>
+                  <span className="pill">Service fee confirmed: {order.priceConfirmed ? 'Yes' : 'No'}</span>
                   {order.address ? <span className="pill">Address: {order.address}</span> : null}
                   {order.scheduledAt ? <span className="pill">When: {formatDate(order.scheduledAt)}</span> : null}
                   {isCustomer && order.verificationCode ? (
@@ -345,9 +342,9 @@ export default function OrderDetail() {
                   <div style={{ marginTop: 12 }}>
                     {!order.priceConfirmed ? (
                       <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                        <span className="muted">Confirm the customer’s price before starting.</span>
+                        <span className="muted">Confirm the customer’s service fee before starting.</span>
                         <Button variant="ghost" loading={priceBusy} onClick={confirmPrice}>
-                          Confirm price
+                          Confirm service fee
                         </Button>
                       </div>
                     ) : null}

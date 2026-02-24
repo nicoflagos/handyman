@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
-import NaijaStates from 'naija-state-local-government';
+import React, { useEffect, useMemo, useState } from 'react';
 
 type NigeriaLocationValue = {
   state: string;
   lga: string;
+  lc: string;
   street: string;
 };
 
@@ -26,21 +26,50 @@ const controlStyle: React.CSSProperties = {
 };
 
 export function NigeriaLocationSelect({ value, onChange, showStreet = true }: NigeriaLocationSelectProps) {
-  const stateOptions = useMemo(() => {
-    const states = NaijaStates.states();
-    return (Array.isArray(states) ? states : []).slice().sort((a, b) => a.localeCompare(b));
+  const [data, setData] = useState<Record<string, Record<string, string[]>> | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    import('../data/ng-state-lga-lc.json')
+      .then(m => {
+        const next = (m as any)?.default || (m as any);
+        if (mounted) setData(next as any);
+      })
+      .catch(() => {
+        if (mounted) setData({});
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  const stateOptions = useMemo(() => {
+    if (!data) return [];
+    return Object.keys(data).slice().sort((a, b) => a.localeCompare(b));
+  }, [data]);
+
   const lgaOptions = useMemo(() => {
+    if (!data) return [];
     if (!value.state) return [];
     try {
-      const res = NaijaStates.lgas(value.state) as any;
-      const lgas = (res && Array.isArray(res.lgas) ? res.lgas : []) as string[];
-      return lgas.slice().sort((a, b) => a.localeCompare(b));
+      const byLga = data[value.state] as Record<string, any> | undefined;
+      return Object.keys(byLga || {}).slice().sort((a, b) => a.localeCompare(b));
     } catch {
       return [];
     }
-  }, [value.state]);
+  }, [data, value.state]);
+
+  const lcOptions = useMemo(() => {
+    if (!data) return [];
+    if (!value.state || !value.lga) return [];
+    try {
+      const byLga = data[value.state] as Record<string, any> | undefined;
+      const lcs = (byLga && Array.isArray((byLga as any)[value.lga]) ? (byLga as any)[value.lga] : []) as string[];
+      return lcs.slice().sort((a, b) => a.localeCompare(b));
+    } catch {
+      return [];
+    }
+  }, [data, value.lga, value.state]);
 
   return (
     <div className="grid2">
@@ -55,9 +84,10 @@ export function NigeriaLocationSelect({ value, onChange, showStreet = true }: Ni
         <span style={labelTextStyle}>State</span>
         <select
           value={value.state}
-          onChange={e => onChange({ state: e.target.value, lga: '', street: '' })}
+          onChange={e => onChange({ state: e.target.value, lga: '', lc: '', street: '' })}
           style={controlStyle}
           aria-label="State"
+          disabled={!data}
         >
           <option value="" disabled>
             Select a state…
@@ -74,7 +104,7 @@ export function NigeriaLocationSelect({ value, onChange, showStreet = true }: Ni
         <span style={labelTextStyle}>Local Government (LGA)</span>
         <select
           value={value.lga}
-          onChange={e => onChange({ ...value, lga: e.target.value, street: '' })}
+          onChange={e => onChange({ ...value, lga: e.target.value, lc: '', street: '' })}
           style={controlStyle}
           aria-label="Local Government"
           disabled={!value.state}
@@ -90,6 +120,26 @@ export function NigeriaLocationSelect({ value, onChange, showStreet = true }: Ni
         </select>
       </label>
 
+      <label style={labelStyle}>
+        <span style={labelTextStyle}>Local Council (LC)</span>
+        <select
+          value={value.lc}
+          onChange={e => onChange({ ...value, lc: e.target.value, street: '' })}
+          style={controlStyle}
+          aria-label="Local Council"
+          disabled={!value.lga}
+        >
+          <option value="" disabled>
+            {value.lga ? 'Select an LC…' : 'Select an LGA first…'}
+          </option>
+          {lcOptions.map(lc => (
+            <option key={lc} value={lc}>
+              {lc}
+            </option>
+          ))}
+        </select>
+      </label>
+
       {showStreet ? (
         <label style={labelStyle}>
           <span style={labelTextStyle}>Street</span>
@@ -97,8 +147,8 @@ export function NigeriaLocationSelect({ value, onChange, showStreet = true }: Ni
             value={value.street}
             onChange={e => onChange({ ...value, street: e.target.value })}
             style={controlStyle}
-            placeholder={value.lga ? 'Type street address…' : 'Select an LGA first…'}
-            disabled={!value.lga}
+            placeholder={value.lc ? 'Type street address…' : 'Select an LC first…'}
+            disabled={!value.lc}
             aria-label="Street"
           />
         </label>
