@@ -169,7 +169,7 @@ export default function OrderDetail() {
     setError(null);
     setBusy(true);
     try {
-      const updated = await completeOrder(order._id, afterImage);
+      const updated = await completeOrder(order._id, { verificationCode: verificationCode || undefined, file: afterImage });
       setOrder(updated);
       setAfterImage(null);
     } catch (err: any) {
@@ -216,12 +216,16 @@ export default function OrderDetail() {
                       </Button>
                     ) : null}
                     {isProvider && order.status === 'accepted' ? (
-                      <Button loading={busy} onClick={startWithProof} disabled={!order.priceConfirmed || !beforeImage}>
+                      <Button
+                        loading={busy}
+                        onClick={startWithProof}
+                        disabled={!order.priceConfirmed || !beforeImage || !String(verificationCode || '').trim()}
+                      >
                         Start (with before image)
                       </Button>
                     ) : null}
                     {isProvider && order.status === 'in_progress' ? (
-                      <Button loading={busy} onClick={completeWithProof} disabled={!afterImage}>
+                      <Button loading={busy} onClick={completeWithProof} disabled={!afterImage || !String(verificationCode || '').trim()}>
                         Complete (with after image)
                       </Button>
                     ) : null}
@@ -253,6 +257,24 @@ export default function OrderDetail() {
 
                 {isProvider && order.status === 'in_progress' ? (
                   <div style={{ marginTop: 12 }}>
+                    <label style={{ display: 'grid', gap: 6, marginBottom: 10 }}>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Customer verification code</span>
+                      <input
+                        value={verificationCode}
+                        onChange={e => setVerificationCode(e.target.value)}
+                        inputMode="numeric"
+                        placeholder="Enter 6-digit code"
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: 12,
+                          border: '1px solid rgba(255,255,255,0.14)',
+                          background: 'rgba(0,0,0,0.18)',
+                          color: 'rgba(255,255,255,0.92)',
+                          outline: 'none',
+                        }}
+                      />
+                    </label>
                     <label style={{ display: 'grid', gap: 6 }}>
                       <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>After image</span>
                       <input type="file" accept="image/*" onChange={e => setAfterImage(e.target.files?.[0] || null)} />

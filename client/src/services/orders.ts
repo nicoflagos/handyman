@@ -121,9 +121,10 @@ export async function startOrder(orderId: string, input: { verificationCode?: st
   return res.data as Order;
 }
 
-export async function completeOrder(orderId: string, file: File): Promise<Order> {
+export async function completeOrder(orderId: string, input: { verificationCode?: string; file: File }): Promise<Order> {
   const form = new FormData();
-  form.append('file', file);
+  if (input.verificationCode) form.append('verificationCode', input.verificationCode);
+  form.append('file', input.file);
   const res = await apiClient.post(`/orders/${orderId}/complete`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
   return res.data as Order;
 }

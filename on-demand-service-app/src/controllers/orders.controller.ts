@@ -565,6 +565,12 @@ export class OrdersController {
       if (!order.providerId || order.providerId.toString() !== req.userId) return res.status(403).json({ message: 'Forbidden' });
       if (order.status !== 'in_progress') return res.status(400).json({ message: 'Order must be in progress to complete' });
 
+      const code = String((req.body?.verificationCode || '')).trim();
+      if (order.verificationCode) {
+        if (!code) return res.status(400).json({ message: 'verificationCode is required to complete this job' });
+        if (code !== order.verificationCode) return res.status(400).json({ message: 'Invalid verification code' });
+      }
+
       const file = (req as any).file as any;
       const url = this.saveOrderImage({ orderId: String(order._id), kind: 'after', file });
       order.afterImageUrls = Array.isArray(order.afterImageUrls) ? order.afterImageUrls : [];
