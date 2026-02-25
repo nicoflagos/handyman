@@ -15,6 +15,7 @@ import { InlineNotice } from '../ui/Toast';
 import { Button } from '../ui/Button';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { assetUrl } from '../lib/assetUrl';
 
 function formatDate(value?: string) {
   if (!value) return '';
@@ -269,7 +270,7 @@ export default function OrderDetail() {
                         <div className="row" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
                           {order.customerInfo.avatarUrl ? (
                             <img
-                              src={order.customerInfo.avatarUrl}
+                              src={assetUrl(order.customerInfo.avatarUrl)}
                               alt="Customer"
                               style={{
                                 width: 36,
@@ -304,7 +305,7 @@ export default function OrderDetail() {
                         <div className="row" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
                           {order.handymanInfo.avatarUrl ? (
                             <img
-                              src={order.handymanInfo.avatarUrl}
+                              src={assetUrl(order.handymanInfo.avatarUrl)}
                               alt="Handyman"
                               style={{
                                 width: 36,

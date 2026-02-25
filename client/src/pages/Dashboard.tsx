@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { InlineNotice } from '../ui/Toast';
 import { listMarketplaceOrders, listMyOrders, Order } from '../services/orders';
 import { getMe, listMyTransactions, Me, topUpWallet, Transaction, updateProviderProfile, uploadAvatar } from '../services/me';
+import { assetUrl } from '../lib/assetUrl';
 
 export default function Dashboard() {
   const auth = useAuth();
@@ -91,7 +92,7 @@ export default function Dashboard() {
             <div className="row" style={{ gap: 12, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
               {me?.avatarUrl ? (
                 <img
-                  src={me.avatarUrl}
+                  src={assetUrl(me.avatarUrl)}
                   alt="Profile"
                   style={{ width: 88, height: 88, borderRadius: 999, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.14)' }}
                 />
