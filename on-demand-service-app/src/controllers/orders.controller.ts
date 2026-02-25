@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import { Transaction } from '../models/mongo/transaction.schema';
 import { getUploadsRootDir } from '../utils/uploads';
 import { pushService } from '../services/push.service';
+import { User } from '../models/mongo/user.schema';
 
 type AuthRequest = Request & { userId?: string };
 
@@ -162,6 +163,42 @@ export class OrdersController {
         price: nPrice,
         scheduledAt: parsedScheduledAt,
       });
+
+      // Notify matching handymen in the same LC (best-effort).
+      void (async () => {
+        try {
+          const orderId = String((order as any)._id);
+          const lcName = String((order as any).lc || '').trim();
+          const fmt = (n: number) => `₦${Math.round(n).toLocaleString('en-NG')}`;
+          const recipients = await User.find({
+            role: 'provider',
+            'providerProfile.available': true,
+            'providerProfile.country': country,
+            'providerProfile.state': state,
+            'providerProfile.lga': lga,
+            'providerProfile.lc': lc,
+            'providerProfile.skills': serviceKey,
+          })
+            .select('_id')
+            .limit(50)
+            .exec();
+
+          await Promise.all(
+            recipients.map(p =>
+              pushService
+                .notifyUser(p._id as any, {
+                  title: 'New job posted',
+                  body: `New job in ${lcName || lc} (${lga} LGA, ${state}). Fee: ${fmt(nPrice)}.`,
+                  data: { event: 'job_posted', orderId, state, lga, lc },
+                })
+                .catch(err => console.log(`[push] job posted -> handyman failed: ${(err as any)?.message || err}`)),
+            ),
+          );
+        } catch (err: any) {
+          console.log(`[push] job posted failed: ${(err as any)?.message || err}`);
+        }
+      })();
+
       return res.status(201).json(this.toSafeOrder(order, { includeVerificationCode: true }));
     } catch (error) {
       return res.status(500).json({ message: 'Error creating order', error });
@@ -583,7 +620,7 @@ export class OrdersController {
         void pushService
           .notifyUser(order.customerId, {
             title: 'Job completed',
-            body: `Job completed for "${title}". Escrow released.`,
+            body: `Job completed for "${title}". Escrow released to handyman.`,
             data: { event: 'order_completed', orderId },
           })
           .catch(err => console.log(`[push] order completed -> customer failed: ${(err as any)?.message || err}`));
