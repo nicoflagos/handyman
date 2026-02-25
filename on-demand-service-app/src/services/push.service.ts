@@ -53,9 +53,12 @@ export class PushService {
 
     // Remove invalid tokens.
     const invalid: string[] = [];
+    const errors: Array<{ code?: string; message?: string }> = [];
     res.responses.forEach((r, idx) => {
       if (r.success) return;
       const code = (r.error as any)?.code as string | undefined;
+      const message = (r.error as any)?.message as string | undefined;
+      if (errors.length < 3) errors.push({ code, message });
       if (
         code === 'messaging/invalid-registration-token' ||
         code === 'messaging/registration-token-not-registered'
@@ -67,7 +70,7 @@ export class PushService {
       await User.updateOne({ _id: userId }, { $pull: { pushTokens: { $in: invalid } } }).exec();
     }
 
-    return { sent: res.successCount, failed: res.failureCount };
+    return { sent: res.successCount, failed: res.failureCount, errors: errors.length ? errors : undefined };
   }
 }
 
