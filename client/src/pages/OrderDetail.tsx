@@ -10,6 +10,7 @@ import {
   rateOrder,
   setOrderStatus,
   startOrder,
+  updateOrderPrice,
 } from '../services/orders';
 import { InlineNotice } from '../ui/Toast';
 import { Button } from '../ui/Button';
@@ -54,6 +55,8 @@ export default function OrderDetail() {
   const [beforeImage, setBeforeImage] = useState<File | null>(null);
   const [afterImage, setAfterImage] = useState<File | null>(null);
   const [priceBusy, setPriceBusy] = useState(false);
+  const [editPrice, setEditPrice] = useState('');
+  const [editPriceBusy, setEditPriceBusy] = useState(false);
 
   const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
   const isCustomer = auth.claims?.role === 'customer';
@@ -64,6 +67,7 @@ export default function OrderDetail() {
     getOrder(id)
       .then(o => {
         setOrder(o);
+        setEditPrice(String(o?.price ?? ''));
         setState('ready');
       })
       .catch(err => {
@@ -145,6 +149,25 @@ export default function OrderDetail() {
       setError(err?.response?.data?.message || 'Unable to confirm price');
     } finally {
       setPriceBusy(false);
+    }
+  }
+
+  async function saveEditedPrice() {
+    if (!order) return;
+    setError(null);
+    const n = Number(editPrice);
+    if (!Number.isFinite(n) || n <= 0) {
+      setError('Please enter a valid service fee.');
+      return;
+    }
+    setEditPriceBusy(true);
+    try {
+      const updated = await updateOrderPrice(order._id, n);
+      setOrder(updated);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Unable to update service fee');
+    } finally {
+      setEditPriceBusy(false);
     }
   }
 
@@ -262,6 +285,40 @@ export default function OrderDetail() {
                     <span className="pill">Completion code: {order.completionVerificationCode || order.verificationCode}</span>
                   ) : null}
                 </div>
+
+                {isCustomer && (order.status === 'requested' || order.status === 'accepted') && !order.priceConfirmed ? (
+                  <div style={{ marginTop: 12 }}>
+                    <div className="pill" style={{ marginBottom: 10 }}>
+                      Edit service fee
+                    </div>
+                    <div className="row" style={{ gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                      <label style={{ display: 'grid', gap: 6, flex: 1, minWidth: 220 }}>
+                        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Service fee (NGN)</span>
+                        <input
+                          value={editPrice}
+                          onChange={e => setEditPrice(e.target.value)}
+                          inputMode="numeric"
+                          placeholder="e.g. 5000"
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            borderRadius: 12,
+                            border: '1px solid rgba(255,255,255,0.14)',
+                            background: 'rgba(0,0,0,0.18)',
+                            color: 'rgba(255,255,255,0.92)',
+                            outline: 'none',
+                          }}
+                        />
+                        <span className="muted" style={{ fontSize: 13 }}>
+                          Excludes cost of materials. You can edit until the handyman confirms.
+                        </span>
+                      </label>
+                      <Button loading={editPriceBusy} onClick={saveEditedPrice}>
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
 
                 {isProvider && order.status === 'in_progress' ? (
                   <div style={{ marginTop: 12 }}>

@@ -452,6 +452,66 @@ export class OrdersController {
     }
   }
 
+  async updateServiceFee(req: AuthRequest, res: Response) {
+    try {
+      if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+      const actorId = new Types.ObjectId(req.userId);
+      const role = await this.userService.getRole(actorId);
+      if (role !== 'customer' && role !== 'admin') return res.status(403).json({ message: 'Only customers can edit service fee' });
+
+      const order: any = await this.orderService.getById(req.params.id);
+      if (!order) return res.status(404).json({ message: 'Order not found' });
+
+      const isCustomer = String(order.customerId) === req.userId;
+      const isAdmin = role === 'admin';
+      if (!(isAdmin || isCustomer)) return res.status(403).json({ message: 'Forbidden' });
+
+      if (order.status !== 'requested' && order.status !== 'accepted') {
+        return res.status(400).json({ message: 'Service fee can only be edited before the job starts' });
+      }
+      if (order.priceConfirmed) {
+        return res.status(400).json({ message: 'Service fee cannot be edited after handyman confirms price' });
+      }
+
+      const { price } = req.body || {};
+      const nPrice = Number(price);
+      if (!Number.isFinite(nPrice) || nPrice <= 0) return res.status(400).json({ message: 'price must be a positive number' });
+
+      // Ensure customer can afford job fee + 10% platform fee (commission).
+      const platformFee = Math.round(nPrice * 0.1);
+      const total = nPrice + platformFee;
+      const customer: any = await this.userService.getById(String(order.customerId));
+      if (!customer) return res.status(400).json({ message: 'Customer not found' });
+      if (typeof customer.walletBalance !== 'number') customer.walletBalance = 100000;
+      if (customer.walletBalance < total) {
+        return res
+          .status(400)
+          .json({ message: `Insufficient wallet balance. Need ₦${total} (₦${nPrice} + ₦${platformFee} fee).` });
+      }
+
+      order.price = nPrice;
+      order.priceConfirmed = false;
+      order.priceConfirmedAt = undefined;
+      order.timeline.push({ status: order.status, at: new Date(), by: actorId, note: `Service fee updated to ₦${nPrice}` });
+      await order.save();
+
+      // Notify assigned handyman (if any) that price changed.
+      if (order.providerId) {
+        void pushService
+          .notifyUser(order.providerId, {
+            title: 'Service fee updated',
+            body: `Customer updated service fee for "${String(order.title || 'Order')}" to ₦${nPrice.toLocaleString('en-NG')}.`,
+            data: { event: 'price_updated', orderId: String(order._id) },
+          })
+          .catch(err => console.log(`[push] price updated -> handyman failed: ${(err as any)?.message || err}`));
+      }
+
+      return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
+    } catch (error: any) {
+      return res.status(500).json({ message: error?.message || 'Error updating service fee' });
+    }
+  }
+
   async startOrder(req: AuthRequest, res: Response) {
     try {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });

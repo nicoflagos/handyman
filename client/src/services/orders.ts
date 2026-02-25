@@ -115,6 +115,11 @@ export async function confirmOrderPrice(orderId: string): Promise<Order> {
   return res.data as Order;
 }
 
+export async function updateOrderPrice(orderId: string, price: number): Promise<Order> {
+  const res = await apiClient.put(`/orders/${orderId}/price`, { price });
+  return res.data as Order;
+}
+
 export async function startOrder(orderId: string, input: { startCode?: string; file: File }): Promise<Order> {
   const form = new FormData();
   if (input.startCode) form.append('startCode', input.startCode);
