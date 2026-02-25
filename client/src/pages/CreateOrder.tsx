@@ -176,7 +176,9 @@ export default function CreateOrder() {
                 label="Preferred date/time"
                 value={scheduledAt}
                 onChange={e => setScheduledAt(e.target.value)}
-                placeholder="Optional (e.g. 2026-02-18 2pm)"
+                type="datetime-local"
+                placeholder=""
+                hint="Optional. Choose when you want the handyman to come."
               />
 
               {error ? <InlineNotice kind="error">{error}</InlineNotice> : null}

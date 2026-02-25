@@ -122,6 +122,17 @@ export class OrdersController {
         return res.status(400).json({ message: 'serviceKey, title, country, state, lga, lc, and price are required' });
       }
 
+      let parsedScheduledAt: Date | undefined = undefined;
+      if (scheduledAt) {
+        const d = new Date(String(scheduledAt));
+        if (Number.isNaN(d.getTime())) {
+          return res
+            .status(400)
+            .json({ message: 'scheduledAt is invalid. Use the date picker or an ISO date like 2026-02-25T14:30' });
+        }
+        parsedScheduledAt = d;
+      }
+
       // Ensure customer can afford job fee + 10% platform fee (commission).
       const platformFee = Math.round(nPrice * 0.1);
       const total = nPrice + platformFee;
@@ -149,7 +160,7 @@ export class OrdersController {
         lga,
         lc,
         price: nPrice,
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
+        scheduledAt: parsedScheduledAt,
       });
       return res.status(201).json(this.toSafeOrder(order, { includeVerificationCode: true }));
     } catch (error) {
