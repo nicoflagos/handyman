@@ -38,11 +38,11 @@ function initIfNeeded() {
 export class PushService {
   async notifyUser(userId: Types.ObjectId, msg: PushMessage) {
     initIfNeeded();
-    if (!admin.apps.length) return { sent: 0, skipped: true };
+    if (!admin.apps.length) return { sent: 0, skipped: true, reason: 'firebase_not_configured' as const };
 
     const user: any = await User.findById(userId).select('pushTokens').exec();
     const tokens: string[] = Array.isArray(user?.pushTokens) ? user.pushTokens : [];
-    if (tokens.length === 0) return { sent: 0, skipped: true };
+    if (tokens.length === 0) return { sent: 0, skipped: true, reason: 'no_push_tokens' as const };
 
     // Use sendEachForMulticast for multiple devices.
     const res = await admin.messaging().sendEachForMulticast({
