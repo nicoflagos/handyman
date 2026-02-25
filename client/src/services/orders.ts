@@ -30,6 +30,8 @@ export type Order = {
   price: number;
   priceConfirmed?: boolean;
   verificationCode?: string;
+  startVerificationCode?: string;
+  completionVerificationCode?: string;
   verificationVerifiedAt?: string;
   customerRating?: OrderRating;
   handymanRating?: OrderRating;
@@ -113,17 +115,17 @@ export async function confirmOrderPrice(orderId: string): Promise<Order> {
   return res.data as Order;
 }
 
-export async function startOrder(orderId: string, input: { verificationCode?: string; file: File }): Promise<Order> {
+export async function startOrder(orderId: string, input: { startCode?: string; file: File }): Promise<Order> {
   const form = new FormData();
-  if (input.verificationCode) form.append('verificationCode', input.verificationCode);
+  if (input.startCode) form.append('startCode', input.startCode);
   form.append('file', input.file);
   const res = await apiClient.post(`/orders/${orderId}/start`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
   return res.data as Order;
 }
 
-export async function completeOrder(orderId: string, input: { verificationCode?: string; file: File }): Promise<Order> {
+export async function completeOrder(orderId: string, input: { completionCode?: string; file: File }): Promise<Order> {
   const form = new FormData();
-  if (input.verificationCode) form.append('verificationCode', input.verificationCode);
+  if (input.completionCode) form.append('completionCode', input.completionCode);
   form.append('file', input.file);
   const res = await apiClient.post(`/orders/${orderId}/complete`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
   return res.data as Order;

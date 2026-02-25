@@ -22,7 +22,10 @@ export interface IOrderDocument extends Document {
   state: string;
   lga: string;
   lc?: string;
+  // Deprecated (v1). Kept for backward compatibility with older clients.
   verificationCode?: string;
+  startVerificationCode?: string;
+  completionVerificationCode?: string;
   verificationVerifiedAt?: Date;
   verificationVerifiedBy?: Types.ObjectId;
   price: number;
@@ -58,6 +61,8 @@ const OrderSchema = new Schema<IOrderDocument>(
     lga: { type: String, required: true, trim: true, index: true },
     lc: { type: String, required: false, trim: true, index: true },
     verificationCode: { type: String, required: false, trim: true, index: false },
+    startVerificationCode: { type: String, required: false, trim: true, index: false },
+    completionVerificationCode: { type: String, required: false, trim: true, index: false },
     verificationVerifiedAt: { type: Date, required: false },
     verificationVerifiedBy: { type: Schema.Types.ObjectId, ref: 'User', required: false },
     price: { type: Number, required: false, default: 0, min: 0 },

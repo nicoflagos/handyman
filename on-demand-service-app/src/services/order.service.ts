@@ -18,7 +18,11 @@ type CreateOrderInput = {
 
 export class OrderService {
   async createOrder(input: CreateOrderInput) {
-    const verificationCode = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+    const startVerificationCode = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+    let completionVerificationCode = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+    if (completionVerificationCode === startVerificationCode) {
+      completionVerificationCode = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+    }
     const order = new Order({
       customerId: input.customerId,
       serviceKey: input.serviceKey,
@@ -30,7 +34,8 @@ export class OrderService {
       lga: input.lga,
       lc: input.lc,
       price: input.price,
-      verificationCode,
+      startVerificationCode,
+      completionVerificationCode,
       scheduledAt: input.scheduledAt,
       status: 'requested',
       timeline: [{ status: 'requested', at: new Date(), by: input.customerId }],

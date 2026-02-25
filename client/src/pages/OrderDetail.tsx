@@ -46,7 +46,8 @@ export default function OrderDetail() {
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
+  const [startCode, setStartCode] = useState('');
+  const [completionCode, setCompletionCode] = useState('');
   const [ratingStars, setRatingStars] = useState(5);
   const [ratingNote, setRatingNote] = useState('');
   const [ratingBusy, setRatingBusy] = useState(false);
@@ -153,7 +154,7 @@ export default function OrderDetail() {
     setError(null);
     setBusy(true);
     try {
-      const updated = await startOrder(order._id, { verificationCode: verificationCode || undefined, file: beforeImage });
+      const updated = await startOrder(order._id, { startCode: startCode || undefined, file: beforeImage });
       setOrder(updated);
       setBeforeImage(null);
     } catch (err: any) {
@@ -169,7 +170,7 @@ export default function OrderDetail() {
     setError(null);
     setBusy(true);
     try {
-      const updated = await completeOrder(order._id, { verificationCode: verificationCode || undefined, file: afterImage });
+      const updated = await completeOrder(order._id, { completionCode: completionCode || undefined, file: afterImage });
       setOrder(updated);
       setAfterImage(null);
     } catch (err: any) {
@@ -219,13 +220,17 @@ export default function OrderDetail() {
                       <Button
                         loading={busy}
                         onClick={startWithProof}
-                        disabled={!order.priceConfirmed || !beforeImage || !String(verificationCode || '').trim()}
+                        disabled={!order.priceConfirmed || !beforeImage || !String(startCode || '').trim()}
                       >
                         Start (with before image)
                       </Button>
                     ) : null}
                     {isProvider && order.status === 'in_progress' ? (
-                      <Button loading={busy} onClick={completeWithProof} disabled={!afterImage || !String(verificationCode || '').trim()}>
+                      <Button
+                        loading={busy}
+                        onClick={completeWithProof}
+                        disabled={!afterImage || !String(completionCode || '').trim()}
+                      >
                         Complete (with after image)
                       </Button>
                     ) : null}
@@ -250,18 +255,21 @@ export default function OrderDetail() {
                   <span className="pill">Service fee confirmed: {order.priceConfirmed ? 'Yes' : 'No'}</span>
                   {order.address ? <span className="pill">Address: {order.address}</span> : null}
                   {order.scheduledAt ? <span className="pill">When: {formatDate(order.scheduledAt)}</span> : null}
-                  {isCustomer && order.verificationCode ? (
-                    <span className="pill">Verification code: {order.verificationCode}</span>
+                  {isCustomer && (order.startVerificationCode || order.verificationCode) ? (
+                    <span className="pill">Start code: {order.startVerificationCode || order.verificationCode}</span>
+                  ) : null}
+                  {isCustomer && (order.completionVerificationCode || order.verificationCode) ? (
+                    <span className="pill">Completion code: {order.completionVerificationCode || order.verificationCode}</span>
                   ) : null}
                 </div>
 
                 {isProvider && order.status === 'in_progress' ? (
                   <div style={{ marginTop: 12 }}>
                     <label style={{ display: 'grid', gap: 6, marginBottom: 10 }}>
-                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Customer verification code</span>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Customer completion code</span>
                       <input
-                        value={verificationCode}
-                        onChange={e => setVerificationCode(e.target.value)}
+                        value={completionCode}
+                        onChange={e => setCompletionCode(e.target.value)}
                         inputMode="numeric"
                         placeholder="Enter 6-digit code"
                         style={{
@@ -372,10 +380,10 @@ export default function OrderDetail() {
                       </div>
                     ) : null}
                     <label style={{ display: 'grid', gap: 6 }}>
-                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Customer verification code</span>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Customer start code</span>
                       <input
-                        value={verificationCode}
-                        onChange={e => setVerificationCode(e.target.value)}
+                        value={startCode}
+                        onChange={e => setStartCode(e.target.value)}
                         inputMode="numeric"
                         placeholder="Enter 6-digit code"
                         style={{

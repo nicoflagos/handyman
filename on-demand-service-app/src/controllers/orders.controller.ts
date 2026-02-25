@@ -18,7 +18,11 @@ export class OrdersController {
 
   private toSafeOrder(order: any, opts: { includeVerificationCode: boolean }) {
     const plain = order?.toObject ? order.toObject() : order;
-    if (!opts.includeVerificationCode) delete plain.verificationCode;
+    if (!opts.includeVerificationCode) {
+      delete plain.verificationCode;
+      delete plain.startVerificationCode;
+      delete plain.completionVerificationCode;
+    }
     return plain;
   }
 
@@ -461,10 +465,11 @@ export class OrdersController {
       if (order.status !== 'accepted') return res.status(400).json({ message: 'Order must be accepted before starting' });
       if (!order.priceConfirmed) return res.status(400).json({ message: 'Confirm price before starting' });
 
-      const code = String((req.body?.verificationCode || '')).trim();
-      if (order.verificationCode && !order.verificationVerifiedAt) {
-        if (!code) return res.status(400).json({ message: 'verificationCode is required to start this job' });
-        if (code !== order.verificationCode) return res.status(400).json({ message: 'Invalid verification code' });
+      const code = String((req.body?.startCode || req.body?.verificationCode || '')).trim();
+      const expected = String(order.startVerificationCode || order.verificationCode || '').trim();
+      if (expected && !order.verificationVerifiedAt) {
+        if (!code) return res.status(400).json({ message: 'startCode is required to start this job' });
+        if (code !== expected) return res.status(400).json({ message: 'Invalid start code' });
         order.verificationVerifiedAt = new Date();
         order.verificationVerifiedBy = actorId;
       }
@@ -565,10 +570,11 @@ export class OrdersController {
       if (!order.providerId || order.providerId.toString() !== req.userId) return res.status(403).json({ message: 'Forbidden' });
       if (order.status !== 'in_progress') return res.status(400).json({ message: 'Order must be in progress to complete' });
 
-      const code = String((req.body?.verificationCode || '')).trim();
-      if (order.verificationCode) {
-        if (!code) return res.status(400).json({ message: 'verificationCode is required to complete this job' });
-        if (code !== order.verificationCode) return res.status(400).json({ message: 'Invalid verification code' });
+      const code = String((req.body?.completionCode || req.body?.verificationCode || '')).trim();
+      const expected = String(order.completionVerificationCode || order.verificationCode || '').trim();
+      if (expected) {
+        if (!code) return res.status(400).json({ message: 'completionCode is required to complete this job' });
+        if (code !== expected) return res.status(400).json({ message: 'Invalid completion code' });
       }
 
       const file = (req as any).file as any;
