@@ -6,6 +6,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { Transaction } from '../models/mongo/transaction.schema';
 import { getUploadsRootDir } from '../utils/uploads';
+import { pushService } from '../services/push.service';
 
 type AuthRequest = Request & { userId?: string };
 
@@ -178,6 +179,24 @@ export class UserController {
             return res.status(200).json(updated);
         } catch (error) {
             return res.status(500).json({ message: 'Server error', error });
+        }
+    }
+
+    async sendTestPush(req: AuthRequest, res: Response) {
+        try {
+            if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+            const userId = new Types.ObjectId(req.userId);
+            const { title, body } = req.body || {};
+            const t = String(title || 'Test notification').trim();
+            const b = String(body || 'If you can see this, push is working.').trim();
+            const result = await pushService.notifyUser(userId, {
+                title: t,
+                body: b,
+                data: { event: 'test', at: String(Date.now()) },
+            });
+            return res.status(200).json({ ok: true, result });
+        } catch (error: any) {
+            return res.status(500).json({ message: error?.message || 'Server error' });
         }
     }
 }
