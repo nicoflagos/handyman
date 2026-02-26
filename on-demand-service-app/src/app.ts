@@ -40,8 +40,18 @@ function startServer(): void {
         if (clientDist) {
             const indexHtml = path.join(clientDist, 'index.html');
             app.use(express.static(clientDist));
-            app.get('*', (_req, res) => {
-                res.sendFile(indexHtml);
+            app.get('*', (req, res) => {
+                // Never let the SPA fallback mask real 404s for API/uploads.
+                if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+                    return res.status(404).json({ message: 'Not found' });
+                }
+
+                const accept = String(req.headers.accept || '');
+                if (!accept.includes('text/html')) {
+                    return res.status(404).json({ message: 'Not found' });
+                }
+
+                return res.sendFile(indexHtml);
             });
             logger.info(`Serving static frontend from: ${clientDist}`);
         } else {
