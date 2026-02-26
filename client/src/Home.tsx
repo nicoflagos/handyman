@@ -28,9 +28,9 @@ export default function Home() {
       <div className="card">
         <div className="cardInner">
           <h1 style={{ marginTop: 0, marginBottom: 10, fontSize: 44, lineHeight: 1.05 }}>
-            Book help fast
+            Book help fast!
             <br />
-            connect with local skilled workers, technicians and artisans in your area
+            Connect with local skilled workers, technicians and artisans in your area.
           </h1>
           <p className="muted" style={{ marginTop: 0, marginBottom: 0, fontSize: 18, maxWidth: 760 }}>
             Track everything.
