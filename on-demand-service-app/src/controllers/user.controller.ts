@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { Transaction } from '../models/mongo/transaction.schema';
 import { getUploadsRootDir } from '../utils/uploads';
 import { pushService } from '../services/push.service';
+import { uploadImage } from '../services/media.service';
 
 type AuthRequest = Request & { userId?: string };
 
@@ -105,10 +106,12 @@ export class UserController {
             fs.mkdirSync(uploadsDir, { recursive: true });
 
             const name = `${req.userId}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
-            const fullPath = path.join(uploadsDir, name);
-            fs.writeFileSync(fullPath, file.buffer);
-
-            const avatarUrl = `/uploads/profile/${name}`;
+            const cloudUrl = await uploadImage({ buffer: file.buffer, folder: 'handyman/profile', mimetype: file.mimetype });
+            const avatarUrl = cloudUrl || `/uploads/profile/${name}`;
+            if (!cloudUrl) {
+                const fullPath = path.join(uploadsDir, name);
+                fs.writeFileSync(fullPath, file.buffer);
+            }
             const updated = await this.userService.updateAvatar(userId, avatarUrl);
             return res.status(200).json(updated);
         } catch (error) {

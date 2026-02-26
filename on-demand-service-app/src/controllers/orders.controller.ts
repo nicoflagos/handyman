@@ -10,6 +10,7 @@ import { Transaction } from '../models/mongo/transaction.schema';
 import { getUploadsRootDir } from '../utils/uploads';
 import { pushService } from '../services/push.service';
 import { User } from '../models/mongo/user.schema';
+import { uploadImage } from '../services/media.service';
 
 type AuthRequest = Request & { userId?: string };
 
@@ -396,7 +397,7 @@ export class OrdersController {
     }
   }
 
-  private saveOrderImage(opts: { orderId: string; kind: 'before' | 'after'; file: { mimetype?: string; buffer?: Buffer } }) {
+  private async saveOrderImage(opts: { orderId: string; kind: 'before' | 'after'; file: { mimetype?: string; buffer?: Buffer } }) {
     if (!opts.file?.buffer) throw new Error('file is required');
     if (!opts.file.mimetype || !opts.file.mimetype.startsWith('image/')) throw new Error('Only image uploads are allowed');
 
@@ -409,9 +410,16 @@ export class OrdersController {
             ? 'gif'
             : 'jpg';
 
+    const name = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
+    const cloudUrl = await uploadImage({
+      buffer: opts.file.buffer,
+      folder: `handyman/orders/${opts.orderId}/${opts.kind}`,
+      mimetype: opts.file.mimetype,
+    });
+    if (cloudUrl) return cloudUrl;
+
     const uploadsDir = path.join(getUploadsRootDir(), 'orders', opts.orderId, opts.kind);
     fs.mkdirSync(uploadsDir, { recursive: true });
-    const name = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
     const fullPath = path.join(uploadsDir, name);
     fs.writeFileSync(fullPath, opts.file.buffer);
     return `/uploads/orders/${opts.orderId}/${opts.kind}/${name}`;
@@ -535,7 +543,7 @@ export class OrdersController {
       }
 
       const file = (req as any).file as any;
-      const url = this.saveOrderImage({ orderId: String(order._id), kind: 'before', file });
+      const url = await this.saveOrderImage({ orderId: String(order._id), kind: 'before', file });
       order.beforeImageUrls = Array.isArray(order.beforeImageUrls) ? order.beforeImageUrls : [];
       order.beforeImageUrls.push(url);
 
@@ -638,7 +646,7 @@ export class OrdersController {
       }
 
       const file = (req as any).file as any;
-      const url = this.saveOrderImage({ orderId: String(order._id), kind: 'after', file });
+      const url = await this.saveOrderImage({ orderId: String(order._id), kind: 'after', file });
       order.afterImageUrls = Array.isArray(order.afterImageUrls) ? order.afterImageUrls : [];
       order.afterImageUrls.push(url);
 

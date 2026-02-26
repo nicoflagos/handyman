@@ -7,6 +7,8 @@ The On-Demand Service Application is a web application designed to provide vario
 - User authentication (login and registration)
 - User profile management
 - Order creation and management
+- Image uploads (avatars + before/after)
+- Push notifications (FCM)
 - Middleware for authentication
 - Logging utility for application events
 
@@ -66,6 +68,15 @@ on-demand-service-app
    ```
    npm start
    ```
+
+## Upload storage
+By default, the server stores images on disk and only saves the URL in MongoDB.
+
+- If you have a persistent disk (Render), set `UPLOADS_DIR=/var/data/uploads`.
+- If you don't have a persistent disk, set Cloudinary env vars and the server will store images in Cloudinary:
+  - `CLOUDINARY_CLOUD_NAME`
+  - `CLOUDINARY_API_KEY`
+  - `CLOUDINARY_API_SECRET`
 
 ## Testing
 To run the tests, use the following command:
