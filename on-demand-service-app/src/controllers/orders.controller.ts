@@ -332,15 +332,95 @@ export class OrdersController {
         return res.status(400).json({ message: 'Use the start/complete endpoints for jobs' });
       }
 
+      // Cancellation rules (customer):
+      if (nextStatus === 'canceled' && isCustomer && role !== 'admin') {
+        const current = order.status as OrderStatus;
+        if (current !== 'requested' && current !== 'accepted') {
+          return res.status(400).json({ message: 'Order can only be canceled before the job starts' });
+        }
+        if ((order as any).escrowFundedAt) {
+          return res.status(400).json({ message: 'Order can only be canceled before the job starts' });
+        }
+      }
+
       const updated = await this.orderService.setStatus({
         orderId: req.params.id,
         status: nextStatus,
         by: actorId,
         note,
       });
+
+      // Push notifications (best-effort).
+      if (nextStatus === 'canceled') {
+        const orderId = String((updated as any)._id);
+        const title = String((updated as any).title || 'Order');
+        const providerId = (updated as any).providerId as Types.ObjectId | undefined;
+        if (providerId) {
+          void pushService
+            .notifyUser(providerId, {
+              title: 'Order canceled',
+              body: `Customer canceled "${title}".`,
+              data: { event: 'order_canceled', orderId },
+            })
+            .catch(err => console.log(`[push] order canceled -> handyman failed: ${(err as any)?.message || err}`));
+        }
+      }
+
       return res.status(200).json(updated);
     } catch (error) {
       return res.status(500).json({ message: 'Error updating order status', error });
+    }
+  }
+
+  async declineOrder(req: AuthRequest, res: Response) {
+    try {
+      if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+      const actorId = new Types.ObjectId(req.userId);
+      const role = await this.userService.getRole(actorId);
+      if (role !== 'provider' && role !== 'admin') return res.status(403).json({ message: 'Only handymen can decline jobs' });
+
+      const order: any = await this.orderService.getById(req.params.id);
+      if (!order) return res.status(404).json({ message: 'Order not found' });
+
+      const isAssignedHandyman = order.providerId?.toString() === req.userId;
+      if (!(role === 'admin' || isAssignedHandyman)) return res.status(403).json({ message: 'Forbidden' });
+
+      if (order.status !== 'accepted') return res.status(400).json({ message: 'Only accepted jobs can be declined' });
+      if (order.escrowFundedAt) return res.status(400).json({ message: 'Cannot decline after job has started' });
+
+      const prevProviderId = order.providerId;
+      order.providerId = undefined;
+      order.status = 'requested';
+      order.timeline.push({ status: 'requested', at: new Date(), by: actorId, note: 'Declined by handyman' });
+      await order.save();
+
+      // Notify customer (best-effort).
+      const orderId = String(order._id);
+      const title = String(order.title || 'Order');
+      if (order.customerId) {
+        void pushService
+          .notifyUser(order.customerId, {
+            title: 'Job declined',
+            body: `Handyman declined "${title}". It is back in the marketplace.`,
+            data: { event: 'order_declined', orderId },
+          })
+          .catch(err => console.log(`[push] order declined -> customer failed: ${(err as any)?.message || err}`));
+      }
+
+      // Notify previously assigned handyman (useful for multi-device).
+      if (prevProviderId) {
+        void pushService
+          .notifyUser(prevProviderId, {
+            title: 'Job declined',
+            body: `You declined "${title}".`,
+            data: { event: 'order_declined', orderId },
+          })
+          .catch(err => console.log(`[push] order declined -> handyman failed: ${(err as any)?.message || err}`));
+      }
+
+      return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
+    } catch (error: any) {
+      return res.status(400).json({ message: error?.message || 'Unable to decline job' });
     }
   }
 

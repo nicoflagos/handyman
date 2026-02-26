@@ -95,6 +95,11 @@ export async function acceptOrder(orderId: string): Promise<Order> {
   return res.data as Order;
 }
 
+export async function declineOrder(orderId: string): Promise<Order> {
+  const res = await apiClient.post(`/orders/${orderId}/decline`, {});
+  return res.data as Order;
+}
+
 export async function setOrderStatus(
   orderId: string,
   status: OrderStatus,

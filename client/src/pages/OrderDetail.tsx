@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Layout } from '../components/Layout';
 import {
   acceptOrder,
+  declineOrder,
   completeOrder,
   confirmOrderPrice,
   getOrder,
@@ -240,6 +241,11 @@ export default function OrderDetail() {
                       </Button>
                     ) : null}
                     {isProvider && order.status === 'accepted' ? (
+                      <Button variant="danger" loading={busy} onClick={() => run(() => declineOrder(order._id))}>
+                        Decline job
+                      </Button>
+                    ) : null}
+                    {isProvider && order.status === 'accepted' ? (
                       <Button
                         loading={busy}
                         onClick={startWithProof}
@@ -257,7 +263,7 @@ export default function OrderDetail() {
                         Complete (with after image)
                       </Button>
                     ) : null}
-                    {order.status !== 'completed' && order.status !== 'canceled' ? (
+                    {isCustomer && (order.status === 'requested' || order.status === 'accepted') ? (
                       <Button variant="danger" loading={busy} onClick={() => run(() => setOrderStatus(order._id, 'canceled'))}>
                         Cancel
                       </Button>

@@ -45,6 +45,7 @@ router.get('/marketplace/orders', authMiddleware, (req, res) => ordersController
 router.post('/orders', authMiddleware, (req, res) => ordersController.createOrder(req as any, res));
 router.get('/orders/:id', authMiddleware, (req, res) => ordersController.getOrder(req as any, res));
 router.post('/orders/:id/accept', authMiddleware, (req, res) => ordersController.acceptOrder(req as any, res));
+router.post('/orders/:id/decline', authMiddleware, (req, res) => ordersController.declineOrder(req as any, res));
 router.post('/orders/:id/status', authMiddleware, (req, res) => ordersController.setStatus(req as any, res));
 router.post('/orders/:id/rate', authMiddleware, (req, res) => ordersController.rateOrder(req as any, res));
 router.post('/orders/:id/confirm-price', authMiddleware, (req, res) => ordersController.confirmPrice(req as any, res));
