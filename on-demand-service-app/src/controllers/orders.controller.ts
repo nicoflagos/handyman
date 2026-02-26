@@ -11,11 +11,28 @@ import { getUploadsRootDir } from '../utils/uploads';
 import { pushService } from '../services/push.service';
 import { User } from '../models/mongo/user.schema';
 import { uploadImage } from '../services/media.service';
+import { Message } from '../models/mongo/message.schema';
 
 type AuthRequest = Request & { userId?: string };
 
 export class OrdersController {
   constructor(private orderService: OrderService, private userService: UserService) {}
+
+  private async loadOrderAndAuthorizeParty(opts: {
+    req: AuthRequest;
+    orderId: string;
+  }): Promise<{ order: any; role: 'customer' | 'provider' | 'admin'; isCustomer: boolean; isProvider: boolean }> {
+    if (!opts.req.userId) throw new Error('Unauthorized');
+    const viewerId = new Types.ObjectId(opts.req.userId);
+    const role = await this.userService.getRole(viewerId);
+    const order = await this.orderService.getById(opts.orderId);
+    if (!order) throw new Error('Order not found');
+    const isCustomer = String((order as any).customerId) === opts.req.userId;
+    const isProvider = String((order as any).providerId || '') === opts.req.userId;
+    const isAdmin = role === 'admin';
+    if (!(isAdmin || isCustomer || isProvider)) throw new Error('Forbidden');
+    return { order, role, isCustomer, isProvider };
+  }
 
   private toSafeOrder(order: any, opts: { includeVerificationCode: boolean }) {
     const plain = order?.toObject ? order.toObject() : order;
@@ -252,6 +269,83 @@ export class OrdersController {
       return res.status(200).json(enriched);
     } catch (error) {
       return res.status(500).json({ message: 'Error retrieving order', error });
+    }
+  }
+
+  async listOrderMessages(req: AuthRequest, res: Response) {
+    try {
+      if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+      const { order } = await this.loadOrderAndAuthorizeParty({ req, orderId: req.params.id });
+
+      if (!(order as any).providerId) return res.status(200).json([]);
+      if ((order as any).status === 'requested') return res.status(200).json([]);
+
+      const items = await Message.find({ orderId: (order as any)._id })
+        .sort({ createdAt: 1 })
+        .limit(200)
+        .select('_id orderId fromUserId toUserId text createdAt')
+        .exec();
+      return res.status(200).json(items);
+    } catch (err: any) {
+      const msg = err?.message || 'Error listing messages';
+      if (msg === 'Forbidden') return res.status(403).json({ message: 'Forbidden' });
+      if (msg === 'Order not found') return res.status(404).json({ message: 'Order not found' });
+      if (msg === 'Unauthorized') return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(500).json({ message: msg });
+    }
+  }
+
+  async sendOrderMessage(req: AuthRequest, res: Response) {
+    try {
+      if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+      const { order, isCustomer, isProvider } = await this.loadOrderAndAuthorizeParty({ req, orderId: req.params.id });
+
+      if (!(order as any).providerId) return res.status(400).json({ message: 'Order has no assigned handyman yet' });
+      if ((order as any).status === 'requested') return res.status(400).json({ message: 'Chat is available after order is accepted' });
+      if ((order as any).status === 'completed' || (order as any).status === 'canceled') {
+        return res.status(400).json({ message: 'Chat is closed for this order' });
+      }
+
+      const text = String(req.body?.text || '').trim();
+      if (!text) return res.status(400).json({ message: 'text is required' });
+      if (text.length > 1000) return res.status(400).json({ message: 'text is too long' });
+
+      const fromUserId = new Types.ObjectId(req.userId);
+      const toUserId = isCustomer ? new Types.ObjectId(String((order as any).providerId)) : new Types.ObjectId(String((order as any).customerId));
+      if (!(isCustomer || isProvider)) return res.status(403).json({ message: 'Forbidden' });
+
+      const msgDoc = await Message.create({
+        orderId: (order as any)._id,
+        fromUserId,
+        toUserId,
+        text,
+      });
+
+      const orderId = String((order as any)._id);
+      const title = 'New message';
+      const preview = text.length > 120 ? `${text.slice(0, 117)}...` : text;
+      void pushService
+        .notifyUser(toUserId, {
+          title,
+          body: preview,
+          data: { event: 'chat_message', orderId, messageId: String((msgDoc as any)._id) },
+        })
+        .catch(e => console.log(`[push] chat message failed: ${(e as any)?.message || e}`));
+
+      return res.status(201).json({
+        _id: (msgDoc as any)._id,
+        orderId: (msgDoc as any).orderId,
+        fromUserId: (msgDoc as any).fromUserId,
+        toUserId: (msgDoc as any).toUserId,
+        text: (msgDoc as any).text,
+        createdAt: (msgDoc as any).createdAt,
+      });
+    } catch (err: any) {
+      const msg = err?.message || 'Error sending message';
+      if (msg === 'Forbidden') return res.status(403).json({ message: 'Forbidden' });
+      if (msg === 'Order not found') return res.status(404).json({ message: 'Order not found' });
+      if (msg === 'Unauthorized') return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(500).json({ message: msg });
     }
   }
 

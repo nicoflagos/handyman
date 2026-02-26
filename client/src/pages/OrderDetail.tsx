@@ -6,9 +6,12 @@ import {
   completeOrder,
   confirmOrderPrice,
   getOrder,
+  listOrderMessages,
   Order,
+  OrderMessage,
   OrderStatus,
   rateOrder,
+  sendOrderMessage,
   setOrderStatus,
   startOrder,
   updateOrderPrice,
@@ -58,6 +61,10 @@ export default function OrderDetail() {
   const [priceBusy, setPriceBusy] = useState(false);
   const [editPrice, setEditPrice] = useState('');
   const [editPriceBusy, setEditPriceBusy] = useState(false);
+  const [messages, setMessages] = useState<OrderMessage[]>([]);
+  const [chatState, setChatState] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [chatText, setChatText] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
 
   const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
   const isCustomer = auth.claims?.role === 'customer';
@@ -76,6 +83,55 @@ export default function OrderDetail() {
         setState('error');
       });
   }, [id]);
+
+  const chatAvailable = !!order?.providerId && (order?.status === 'accepted' || order?.status === 'in_progress' || order?.status === 'completed' || order?.status === 'canceled');
+  const chatWritable = !!order?.providerId && (order?.status === 'accepted' || order?.status === 'in_progress');
+
+  // Chat polling (v1): available after accept, closes on completed/canceled (read-only).
+  useEffect(() => {
+    if (!id) return;
+    if (!chatAvailable) return;
+    const intervalMs = 4000;
+    let stopped = false;
+
+    const tick = async () => {
+      if (stopped) return;
+      try {
+        const items = await listOrderMessages(id);
+        setMessages(items);
+        setChatState('idle');
+      } catch {
+        setChatState('error');
+      }
+    };
+
+    setChatState('loading');
+    void tick();
+    const handle = setInterval(tick, intervalMs);
+    return () => {
+      stopped = true;
+      clearInterval(handle);
+    };
+  }, [chatAvailable, id]);
+
+  async function sendChat() {
+    if (!id) return;
+    if (!chatWritable) return;
+    const text = chatText.trim();
+    if (!text) return;
+    setChatBusy(true);
+    setError(null);
+    try {
+      await sendOrderMessage(id, text);
+      setChatText('');
+      const items = await listOrderMessages(id);
+      setMessages(items);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Unable to send message');
+    } finally {
+      setChatBusy(false);
+    }
+  }
 
   // Auto-refresh order details so status/timeline updates without a hard refresh.
   useEffect(() => {
@@ -586,6 +642,82 @@ export default function OrderDetail() {
                         </div>
                       )
                     ) : null}
+                  </div>
+                ) : null}
+
+                {chatAvailable ? (
+                  <div style={{ marginTop: 14 }}>
+                    <div className="pill" style={{ marginBottom: 10 }}>
+                      Chat
+                    </div>
+                    <div
+                      style={{
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'rgba(0,0,0,0.12)',
+                        borderRadius: 12,
+                        padding: '10px 12px',
+                      }}
+                    >
+                      <div style={{ maxHeight: 260, overflow: 'auto' }}>
+                        {chatState === 'loading' ? <div className="muted">Loading messages…</div> : null}
+                        {chatState === 'error' ? <div className="muted">Unable to load messages.</div> : null}
+                        {messages.length === 0 && chatState !== 'loading' ? <div className="muted">No messages yet.</div> : null}
+                        <div className="col" style={{ gap: 8 }}>
+                          {messages.map(m => {
+                            const mine = auth.claims?.userId ? m.fromUserId === auth.claims.userId : false;
+                            return (
+                              <div
+                                key={m._id}
+                                style={{
+                                  alignSelf: mine ? 'flex-end' : 'flex-start',
+                                  maxWidth: '85%',
+                                  border: '1px solid rgba(255,255,255,0.12)',
+                                  background: mine ? 'rgba(34,197,94,0.16)' : 'rgba(0,0,0,0.16)',
+                                  borderRadius: 12,
+                                  padding: '8px 10px',
+                                }}
+                              >
+                                <div style={{ whiteSpace: 'pre-wrap' }}>{m.text}</div>
+                                <div className="muted" style={{ fontSize: 12, marginTop: 4, textAlign: 'right' }}>
+                                  {formatDate(m.createdAt)}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {!chatWritable ? (
+                        <div className="muted" style={{ fontSize: 13, marginTop: 10 }}>
+                          Chat is closed for this order.
+                        </div>
+                      ) : (
+                        <div className="row" style={{ gap: 10, marginTop: 10, alignItems: 'flex-end' }}>
+                          <label style={{ display: 'grid', gap: 6, flex: 1 }}>
+                            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Message</span>
+                            <textarea
+                              value={chatText}
+                              onChange={e => setChatText(e.target.value)}
+                              rows={2}
+                              placeholder="Type a message…"
+                              style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                borderRadius: 12,
+                                border: '1px solid rgba(255,255,255,0.14)',
+                                background: 'rgba(0,0,0,0.18)',
+                                color: 'rgba(255,255,255,0.92)',
+                                outline: 'none',
+                                resize: 'vertical',
+                              }}
+                            />
+                          </label>
+                          <Button loading={chatBusy} onClick={sendChat} disabled={!chatText.trim()}>
+                            Send
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : null}
               </div>

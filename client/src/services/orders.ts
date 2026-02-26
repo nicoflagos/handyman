@@ -15,6 +15,15 @@ export type OrderRating = {
   at: string;
 };
 
+export type OrderMessage = {
+  _id: string;
+  orderId: string;
+  fromUserId: string;
+  toUserId: string;
+  text: string;
+  createdAt: string;
+};
+
 export type Order = {
   _id: string;
   customerId: string;
@@ -83,6 +92,16 @@ export async function listMyOrders(): Promise<Order[]> {
 export async function getOrder(orderId: string): Promise<Order> {
   const res = await apiClient.get(`/orders/${orderId}`);
   return res.data as Order;
+}
+
+export async function listOrderMessages(orderId: string): Promise<OrderMessage[]> {
+  const res = await apiClient.get(`/orders/${orderId}/messages`);
+  return res.data as OrderMessage[];
+}
+
+export async function sendOrderMessage(orderId: string, text: string): Promise<OrderMessage> {
+  const res = await apiClient.post(`/orders/${orderId}/messages`, { text });
+  return res.data as OrderMessage;
 }
 
 export async function listMarketplaceOrders(): Promise<Order[]> {
