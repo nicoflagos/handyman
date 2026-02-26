@@ -138,7 +138,7 @@ export default function Register() {
             </div>
             <h3 style={{ marginTop: 0 }}>Passwords are hashed</h3>
             <p className="muted" style={{ marginBottom: 0 }}>
-              Your password is never stored in plain text. It’s securely hashed.
+              Your password is never stored in plain text. It's securely hashed.
             </p>
           </div>
         </div>
