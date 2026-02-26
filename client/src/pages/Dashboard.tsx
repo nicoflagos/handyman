@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [market, setMarket] = React.useState<Order[]>([]);
   const [me, setMe] = React.useState<Me | null>(null);
+  const [avatarFailed, setAvatarFailed] = React.useState(false);
   const [tx, setTx] = React.useState<Transaction[]>([]);
   const [state, setState] = React.useState<'loading' | 'ready' | 'error'>('loading');
   const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
@@ -37,6 +38,7 @@ export default function Dashboard() {
         setOrders(my);
         setMarket(m);
         setMe(meRes);
+        setAvatarFailed(false);
         setTx(txRes);
         setState('ready');
       })
@@ -90,11 +92,12 @@ export default function Dashboard() {
             </p>
 
             <div className="row" style={{ gap: 12, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
-              {me?.avatarUrl ? (
+              {me?.avatarUrl && !avatarFailed ? (
                 <img
                   src={assetUrl(me.avatarUrl)}
                   alt="Profile"
                   style={{ width: 88, height: 88, borderRadius: 999, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.14)' }}
+                  onError={() => setAvatarFailed(true)}
                 />
               ) : (
                 <div
@@ -113,15 +116,18 @@ export default function Dashboard() {
                   type="file"
                   accept="image/*"
                   onChange={async e => {
+                    const inputEl = e.currentTarget;
                     const file = e.target.files?.[0];
                     if (!file) return;
                     try {
                       const updated = await uploadAvatar(file);
                       setMe(updated);
+                      setAvatarFailed(false);
                     } catch (err: any) {
                       alert(err?.response?.data?.message || 'Unable to upload profile picture');
                     } finally {
-                      e.currentTarget.value = '';
+                      // Avoid "Cannot set properties of null" when the input unmounts/rerenders during async work.
+                      if (inputEl) inputEl.value = '';
                     }
                   }}
                 />
