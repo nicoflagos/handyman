@@ -21,7 +21,7 @@ export class UserService {
   async getPublicProfile(userId: Types.ObjectId) {
     return User.findById(userId)
       .select(
-        '_id username firstName lastName phone gender avatarUrl role ratingAsCustomerAvg ratingAsCustomerCount ratingAsHandymanAvg ratingAsHandymanCount',
+        '_id username firstName lastName gender avatarUrl role ratingAsCustomerAvg ratingAsCustomerCount ratingAsHandymanAvg ratingAsHandymanCount',
       )
       .exec();
   }

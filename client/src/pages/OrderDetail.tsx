@@ -440,7 +440,7 @@ export default function OrderDetail() {
                               .join(' ') || order.customerInfo.username}
                           </span>
                           {order.customerInfo.gender ? <span className="pill">Gender: {order.customerInfo.gender}</span> : null}
-                          {order.customerInfo.phone ? <span className="pill">Phone: {order.customerInfo.phone}</span> : null}
+                          
                           {typeof order.customerInfo.ratingAsCustomerAvg === 'number' ? (
                             <span className="pill" title={`${order.customerInfo.ratingAsCustomerAvg.toFixed(1)} / 5`}>
                               Rating: {'★'.repeat(Math.max(0, Math.min(5, Math.round(order.customerInfo.ratingAsCustomerAvg))))}
@@ -475,7 +475,7 @@ export default function OrderDetail() {
                               .join(' ') || order.handymanInfo.username}
                           </span>
                           {order.handymanInfo.gender ? <span className="pill">Gender: {order.handymanInfo.gender}</span> : null}
-                          {order.handymanInfo.phone ? <span className="pill">Phone: {order.handymanInfo.phone}</span> : null}
+                          
                           {typeof order.handymanInfo.ratingAsHandymanAvg === 'number' ? (
                             <span className="pill" title={`${order.handymanInfo.ratingAsHandymanAvg.toFixed(1)} / 5`}>
                               Rating: {'★'.repeat(Math.max(0, Math.min(5, Math.round(order.handymanInfo.ratingAsHandymanAvg))))}
