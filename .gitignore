@@ -18,3 +18,5 @@
 .DS_Store
 .vscode/
 
+# Local-only design exports
+figma-export/

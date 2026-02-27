@@ -1,17 +1,40 @@
 :root {
-  --bg: #070b16;
+  /* Figma landing theme (converted from Tailwind @theme). */
+  --color-background: #0a0e0f;
+  --color-surface: #141b1f;
+  --color-surface-light: #1e2729;
+  --color-surface-lighter: #2a3236;
+
+  --color-primary: #00e676;
+  --color-primary-dark: #00c853;
+  --color-primary-light: #69f0ae;
+
+  --color-text-primary: rgba(255, 255, 255, 0.94);
+  --color-text-secondary: rgba(176, 190, 197, 0.92);
+  --color-text-muted: rgba(120, 144, 156, 0.92);
+
+  --color-border: rgba(38, 50, 56, 1);
+  --color-border-light: rgba(55, 71, 79, 1);
+
+  --color-success: #00e676;
+  --color-warning: #ffc107;
+  --color-danger: #ff5252;
+  --color-info: #00bcd4;
+
+  /* App tokens (mapped) */
+  --bg: var(--color-background);
   --panel: rgba(255, 255, 255, 0.06);
   --panel-strong: rgba(255, 255, 255, 0.12);
-  --text: rgba(255, 255, 255, 0.92);
-  --muted: rgba(255, 255, 255, 0.72);
+  --text: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
   --border: rgba(255, 255, 255, 0.12);
   --shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 
-  --primary: #7c5cff;
-  --primary-2: #2dd4bf;
-  --danger: #ef4444;
-  --success: #22c55e;
-  --warning: #f59e0b;
+  --primary: var(--color-primary);
+  --primary-2: var(--color-primary-light);
+  --danger: var(--color-danger);
+  --success: var(--color-success);
+  --warning: var(--color-warning);
 
   --radius: 14px;
   --radius-sm: 10px;
@@ -43,11 +66,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
   color: var(--text);
   background:
-    radial-gradient(1100px 800px at 12% 0%, rgba(124, 92, 255, 0.22), transparent 55%),
-    radial-gradient(900px 650px at 90% 18%, rgba(45, 212, 191, 0.18), transparent 55%),
-    radial-gradient(700px 700px at 50% 100%, rgba(255, 255, 255, 0.05), transparent 60%),
+    radial-gradient(1100px 800px at 10% 0%, rgba(0, 230, 118, 0.16), transparent 55%),
+    radial-gradient(900px 650px at 90% 18%, rgba(0, 188, 212, 0.10), transparent 55%),
+    radial-gradient(700px 700px at 50% 100%, rgba(255, 255, 255, 0.04), transparent 60%),
     var(--bg);
   background-attachment: fixed;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 a {
@@ -77,8 +104,8 @@ button {
 }
 
 .card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.04));
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   backdrop-filter: blur(12px);
@@ -101,7 +128,7 @@ button {
 }
 
 .muted {
-  color: var(--muted);
+  color: var(--color-text-secondary);
 }
 
 .pill {
@@ -111,8 +138,8 @@ button {
   border-radius: 999px;
   padding: 6px 10px;
   border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.12);
-  color: var(--muted);
+  background: rgba(0, 0, 0, 0.14);
+  color: var(--color-text-secondary);
   font-size: 13px;
 }
 
@@ -130,6 +157,134 @@ input[type='file'] {
   .grid2 {
     grid-template-columns: 1.2fr 0.8fr;
   }
+}
+
+/* Typography (from figma-export theme, with lighter weights). */
+h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+h2 {
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+h3 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+}
+
+h4 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+}
+
+h5 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.45;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2.25rem;
+  }
+  h2 {
+    font-size: 1.875rem;
+  }
+  h3 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Landing helpers */
+.section {
+  padding: 56px 0;
+}
+
+.sectionAlt {
+  padding: 56px 0;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 0;
+  border-right: 0;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .grid3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .grid4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+.landingCard {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.landingKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.14);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.landingHero {
+  text-align: center;
+  padding: 68px 0 28px;
+}
+
+.landingHero p {
+  margin: 0;
+}
+
+.landingCtas {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.footer {
+  padding: 28px 0 44px;
+  color: var(--color-text-muted);
+  font-size: 14px;
 }
 
 /* Toggle switch */

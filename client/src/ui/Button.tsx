@@ -9,14 +9,14 @@ export function Button({ variant = 'primary', loading, disabled, children, ...re
   const styles: React.CSSProperties =
     variant === 'primary'
       ? {
-          border: '1px solid rgba(124, 92, 255, 0.4)',
-          background: 'linear-gradient(135deg, rgba(124,92,255,1), rgba(45,212,191,0.95))',
-          color: '#081018',
+          border: '1px solid rgba(0, 230, 118, 0.55)',
+          background: 'linear-gradient(135deg, rgba(0,230,118,1), rgba(105,240,174,0.95))',
+          color: '#07110e',
         }
       : variant === 'danger'
         ? {
-            border: '1px solid rgba(239, 68, 68, 0.45)',
-            background: 'rgba(239, 68, 68, 0.14)',
+            border: '1px solid rgba(255, 82, 82, 0.45)',
+            background: 'rgba(255, 82, 82, 0.14)',
             color: 'rgba(255,255,255,0.92)',
           }
         : {
@@ -38,8 +38,7 @@ export function Button({ variant = 'primary', loading, disabled, children, ...re
         opacity: disabled || loading ? 0.7 : 1,
       }}
     >
-      {loading ? 'Working…' : children}
+      {loading ? 'Working...' : children}
     </button>
   );
 }
-
