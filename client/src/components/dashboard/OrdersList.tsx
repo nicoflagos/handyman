@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 import { Order } from '../../services/orders';
 import { InlineNotice } from '../../ui/Toast';
 
+function formatDateTime(value?: string) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString();
+}
+
 export function OrdersList({
   title,
   state,
@@ -41,6 +48,14 @@ export function OrdersList({
                 <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
                   {o.serviceKey}
                 </div>
+                <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
+                  <span className="pill" title="Scheduled date/time">
+                    {o.scheduledAt ? formatDateTime(o.scheduledAt) : formatDateTime(o.createdAt)}
+                  </span>
+                  <span className="pill" title="Location">
+                    {[o.lc, o.lga, o.state].filter(Boolean).join(', ')}
+                  </span>
+                </div>
               </div>
             </Link>
           ))}
@@ -50,4 +65,3 @@ export function OrdersList({
     </div>
   );
 }
-

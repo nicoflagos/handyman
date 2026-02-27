@@ -15,6 +15,7 @@ export default function ProviderSettings() {
   const [skills, setSkills] = React.useState<Record<string, boolean>>({});
   const [workImageUrls, setWorkImageUrls] = React.useState<string[]>([]);
   const [workBusy, setWorkBusy] = React.useState(false);
+  const workFileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [state, setState] = React.useState<'loading' | 'ready' | 'error'>('loading');
   const [saving, setSaving] = React.useState(false);
   const [msg, setMsg] = React.useState<{ kind: 'error' | 'success'; text: string } | null>(null);
@@ -117,6 +118,19 @@ export default function ProviderSettings() {
 
                 <div style={{ marginTop: 10 }}>
                   <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)', marginBottom: 8 }}>Work images (up to 4)</div>
+                  <input
+                    ref={workFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={workBusy}
+                    style={{ display: 'none' }}
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      e.currentTarget.value = '';
+                      if (!file) return;
+                      void uploadWork(file);
+                    }}
+                  />
                   <div
                     style={{
                       display: 'grid',
@@ -166,23 +180,16 @@ export default function ProviderSettings() {
                               Remove
                             </Button>
                           ) : (
-                            <label style={{ display: 'grid', gap: 6 }}>
-                              <Button variant="ghost" loading={workBusy} disabled={workBusy}>
-                                Upload
-                              </Button>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                disabled={workBusy}
-                                style={{ display: 'none' }}
-                                onChange={e => {
-                                  const file = e.target.files?.[0];
-                                  e.currentTarget.value = '';
-                                  if (!file) return;
-                                  void uploadWork(file);
-                                }}
-                              />
-                            </label>
+                            <Button
+                              variant="ghost"
+                              loading={workBusy}
+                              disabled={workBusy}
+                              onClick={() => {
+                                workFileInputRef.current?.click();
+                              }}
+                            >
+                              Upload
+                            </Button>
                           )}
                         </div>
                       );

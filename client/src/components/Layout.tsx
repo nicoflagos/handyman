@@ -24,6 +24,7 @@ function TopLink({ to, label }: { to: string; label: string }) {
 export function Layout({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
   const isAdmin = auth.claims?.role === 'admin';
+  const isProvider = auth.claims?.role === 'provider';
 
   return (
     <>
@@ -49,6 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <nav className="row" style={{ gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <TopLink to="/" label="Home" />
               {auth.token ? <TopLink to="/dashboard" label="Dashboard" /> : null}
+              {auth.token && isProvider ? <TopLink to="/provider/settings" label="Handyman settings" /> : null}
               {isAdmin ? <TopLink to="/admin" label="Admin" /> : null}
               {auth.token ? null : <TopLink to="/login" label="Login" />}
               {auth.token ? null : <TopLink to="/register" label="Register" />}
