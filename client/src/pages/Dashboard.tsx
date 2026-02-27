@@ -134,6 +134,36 @@ export default function Dashboard() {
               </label>
             </div>
 
+            {isProvider && Array.isArray(me?.providerProfile?.workImageUrls) && me!.providerProfile!.workImageUrls!.length ? (
+              <div style={{ marginTop: 14 }}>
+                <div className="pill" style={{ marginBottom: 10 }}>
+                  Work samples
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
+                  {me!.providerProfile!.workImageUrls!.slice(0, 4).map((u, idx) => (
+                    <a key={`${u}-${idx}`} href={assetUrl(u)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                      <img
+                        src={assetUrl(u)}
+                        alt={`Work ${idx + 1}`}
+                        style={{
+                          width: '100%',
+                          height: 86,
+                          objectFit: 'cover',
+                          borderRadius: 12,
+                          border: '1px solid rgba(255,255,255,0.14)',
+                        }}
+                      />
+                    </a>
+                  ))}
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <Link to="/provider/settings" style={{ textDecoration: 'none' }}>
+                    <Button variant="ghost">Edit work samples</Button>
+                  </Link>
+                </div>
+              </div>
+            ) : null}
+
             <div style={{ height: 10 }} />
             <div className="row" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
               <span className="pill">Wallet: ₦{Number(me?.walletBalance || 0).toLocaleString()}</span>
