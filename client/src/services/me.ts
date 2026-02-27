@@ -10,6 +10,7 @@ export type ProviderProfile = {
   skills: string[];
   available: boolean;
   availabilityNote?: string;
+  workImageUrls?: string[];
 };
 
 export type Me = {
@@ -44,6 +45,18 @@ export async function uploadAvatar(file: File): Promise<Me> {
   const form = new FormData();
   form.append('file', file);
   const res = await apiClient.post('/me/avatar', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  return res.data as Me;
+}
+
+export async function uploadWorkImage(file: File): Promise<Me> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await apiClient.post('/providers/me/work-images', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  return res.data as Me;
+}
+
+export async function removeWorkImage(url: string): Promise<Me> {
+  const res = await apiClient.delete('/providers/me/work-images', { data: { url } });
   return res.data as Me;
 }
 

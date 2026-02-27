@@ -69,6 +69,9 @@ export default function OrderDetail() {
   const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
   const isCustomer = auth.claims?.role === 'customer';
 
+  const beforeUrls = Array.isArray(order?.beforeImageUrls) ? order!.beforeImageUrls! : [];
+  const afterUrls = Array.isArray(order?.afterImageUrls) ? order!.afterImageUrls! : [];
+
   useEffect(() => {
     if (!id) return;
     setState('loading');
@@ -409,6 +412,52 @@ export default function OrderDetail() {
                   </div>
                 ) : null}
 
+                {beforeUrls.length || afterUrls.length ? (
+                  <div style={{ marginTop: 14 }}>
+                    <div className="pill" style={{ marginBottom: 10 }}>
+                      Job photos
+                    </div>
+
+                    {beforeUrls.length ? (
+                      <div style={{ marginBottom: 10 }}>
+                        <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                          Before
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
+                          {beforeUrls.slice(0, 8).map((u, idx) => (
+                            <a key={`${u}-${idx}`} href={assetUrl(u)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                              <img
+                                src={assetUrl(u)}
+                                alt={`Before ${idx + 1}`}
+                                style={{ width: '100%', height: 86, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(255,255,255,0.14)' }}
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {afterUrls.length ? (
+                      <div>
+                        <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                          After
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
+                          {afterUrls.slice(0, 8).map((u, idx) => (
+                            <a key={`${u}-${idx}`} href={assetUrl(u)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                              <img
+                                src={assetUrl(u)}
+                                alt={`After ${idx + 1}`}
+                                style={{ width: '100%', height: 86, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(255,255,255,0.14)' }}
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 {order.status !== 'requested' && order.providerId && (order.customerInfo || order.handymanInfo) ? (
                   <div style={{ marginTop: 14 }}>
                     <div className="pill" style={{ marginBottom: 10 }}>
@@ -451,7 +500,8 @@ export default function OrderDetail() {
                       ) : null}
 
                       {order.handymanInfo ? (
-                        <div className="row" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+                        <div className="col" style={{ gap: 10 }}>
+                          <div className="row" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
                           {order.handymanInfo.avatarUrl ? (
                             <img
                               src={assetUrl(order.handymanInfo.avatarUrl)}
@@ -483,6 +533,33 @@ export default function OrderDetail() {
                             </span>
                           ) : null}
                         </div>
+
+                        {Array.isArray(order.handymanInfo.providerProfile?.workImageUrls) &&
+                        order.handymanInfo.providerProfile!.workImageUrls!.length ? (
+                          <div>
+                            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                              Work samples
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
+                              {order.handymanInfo.providerProfile!.workImageUrls!.slice(0, 4).map((u, idx) => (
+                                <a key={`${u}-${idx}`} href={assetUrl(u)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                                  <img
+                                    src={assetUrl(u)}
+                                    alt={`Work ${idx + 1}`}
+                                    style={{
+                                      width: '100%',
+                                      height: 86,
+                                      objectFit: 'cover',
+                                      borderRadius: 12,
+                                      border: '1px solid rgba(255,255,255,0.14)',
+                                    }}
+                                  />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
                       ) : null}
                     </div>
                   </div>

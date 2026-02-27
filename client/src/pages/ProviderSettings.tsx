@@ -2,9 +2,10 @@ import React from 'react';
 import { Layout } from '../components/Layout';
 import { InlineNotice } from '../ui/Toast';
 import { Button } from '../ui/Button';
-import { getMe, updateProviderProfile } from '../services/me';
+import { getMe, removeWorkImage, updateProviderProfile, uploadWorkImage } from '../services/me';
 import { listServices, ServiceItem } from '../services/catalog';
 import { NigeriaLocationSelect, NigeriaLocationValue } from '../components/NigeriaLocationSelect';
+import { assetUrl } from '../lib/assetUrl';
 
 export default function ProviderSettings() {
   const [services, setServices] = React.useState<ServiceItem[]>([]);
@@ -12,6 +13,8 @@ export default function ProviderSettings() {
   const [available, setAvailable] = React.useState(true);
   const [availabilityNote, setAvailabilityNote] = React.useState('');
   const [skills, setSkills] = React.useState<Record<string, boolean>>({});
+  const [workImageUrls, setWorkImageUrls] = React.useState<string[]>([]);
+  const [workBusy, setWorkBusy] = React.useState(false);
   const [state, setState] = React.useState<'loading' | 'ready' | 'error'>('loading');
   const [saving, setSaving] = React.useState(false);
   const [msg, setMsg] = React.useState<{ kind: 'error' | 'success'; text: string } | null>(null);
@@ -29,6 +32,7 @@ export default function ProviderSettings() {
         });
         setAvailable(me.providerProfile?.available ?? true);
         setAvailabilityNote(me.providerProfile?.availabilityNote || '');
+        setWorkImageUrls(Array.isArray(me.providerProfile?.workImageUrls) ? me.providerProfile!.workImageUrls! : []);
         const map: Record<string, boolean> = {};
         for (const s of svc) map[s.key] = (me.providerProfile?.skills || []).includes(s.key);
         setSkills(map);
@@ -36,6 +40,34 @@ export default function ProviderSettings() {
       })
       .catch(() => setState('error'));
   }, []);
+
+  async function uploadWork(file: File) {
+    setMsg(null);
+    setWorkBusy(true);
+    try {
+      const me = await uploadWorkImage(file);
+      setWorkImageUrls(Array.isArray(me.providerProfile?.workImageUrls) ? me.providerProfile!.workImageUrls! : []);
+      setMsg({ kind: 'success', text: 'Work image uploaded.' });
+    } catch (err: any) {
+      setMsg({ kind: 'error', text: err?.response?.data?.message || 'Unable to upload work image' });
+    } finally {
+      setWorkBusy(false);
+    }
+  }
+
+  async function removeWork(url: string) {
+    setMsg(null);
+    setWorkBusy(true);
+    try {
+      const me = await removeWorkImage(url);
+      setWorkImageUrls(Array.isArray(me.providerProfile?.workImageUrls) ? me.providerProfile!.workImageUrls! : []);
+      setMsg({ kind: 'success', text: 'Work image removed.' });
+    } catch (err: any) {
+      setMsg({ kind: 'error', text: err?.response?.data?.message || 'Unable to remove work image' });
+    } finally {
+      setWorkBusy(false);
+    }
+  }
 
   async function save() {
     setMsg(null);
@@ -82,6 +114,84 @@ export default function ProviderSettings() {
             {state === 'ready' ? (
               <div className="col" style={{ marginTop: 12 }}>
                 <NigeriaLocationSelect value={location} onChange={setLocation} showStreet={false} />
+
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)', marginBottom: 8 }}>Work images (up to 4)</div>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                      gap: 10,
+                    }}
+                  >
+                    {Array.from({ length: 4 }).map((_, idx) => {
+                      const url = workImageUrls[idx];
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            background: 'rgba(0,0,0,0.12)',
+                            borderRadius: 12,
+                            padding: 10,
+                            display: 'grid',
+                            gap: 8,
+                          }}
+                        >
+                          {url ? (
+                            <img
+                              src={assetUrl(url)}
+                              alt={`Work ${idx + 1}`}
+                              style={{ width: '100%', height: 86, objectFit: 'cover', borderRadius: 10 }}
+                            />
+                          ) : (
+                            <div
+                              className="muted"
+                              style={{
+                                width: '100%',
+                                height: 86,
+                                borderRadius: 10,
+                                border: '1px dashed rgba(255,255,255,0.18)',
+                                display: 'grid',
+                                placeItems: 'center',
+                                fontSize: 13,
+                              }}
+                            >
+                              Empty
+                            </div>
+                          )}
+
+                          {url ? (
+                            <Button variant="ghost" onClick={() => removeWork(url)} loading={workBusy}>
+                              Remove
+                            </Button>
+                          ) : (
+                            <label style={{ display: 'grid', gap: 6 }}>
+                              <Button variant="ghost" loading={workBusy} disabled={workBusy}>
+                                Upload
+                              </Button>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                disabled={workBusy}
+                                style={{ display: 'none' }}
+                                onChange={e => {
+                                  const file = e.target.files?.[0];
+                                  e.currentTarget.value = '';
+                                  if (!file) return;
+                                  void uploadWork(file);
+                                }}
+                              />
+                            </label>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+                    Customers will see these after you accept an order.
+                  </div>
+                </div>
 
                 <label style={{ display: 'grid', gap: 6 }}>
                   <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Availability note</span>

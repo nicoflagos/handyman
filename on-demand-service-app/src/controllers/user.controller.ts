@@ -54,6 +54,74 @@ export class UserController {
         }
     }
 
+    async uploadProviderWorkImage(req: AuthRequest, res: Response) {
+        try {
+            if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+            const userId = new Types.ObjectId(req.userId);
+            const role = await this.userService.getRole(userId);
+            if (role !== 'provider' && role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+            const user: any = await this.userService.getById(req.userId);
+            if (!user) return res.status(404).json({ message: 'User not found' });
+            const existing: string[] = Array.isArray(user?.providerProfile?.workImageUrls) ? user.providerProfile.workImageUrls : [];
+            if (existing.length >= 4) return res.status(400).json({ message: 'You can upload up to 4 work images' });
+
+            const anyReq = req as any;
+            const file = anyReq.file as { originalname?: string; mimetype?: string; buffer?: Buffer } | undefined;
+            if (!file || !file.buffer) return res.status(400).json({ message: 'file is required' });
+            if (!file.mimetype || !file.mimetype.startsWith('image/')) {
+                return res.status(400).json({ message: 'Only image uploads are allowed' });
+            }
+
+            const ext =
+                file.mimetype === 'image/png'
+                    ? 'png'
+                    : file.mimetype === 'image/webp'
+                      ? 'webp'
+                      : file.mimetype === 'image/gif'
+                        ? 'gif'
+                        : 'jpg';
+
+            const name = `${req.userId}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
+            const cloudUrl = await uploadImage({
+                buffer: file.buffer,
+                folder: `handyman/work/${req.userId}`,
+                mimetype: file.mimetype,
+            });
+
+            const url = cloudUrl || `/uploads/work/${req.userId}/${name}`;
+            if (!cloudUrl) {
+                const uploadsDir = path.join(getUploadsRootDir(), 'work', req.userId);
+                fs.mkdirSync(uploadsDir, { recursive: true });
+                const fullPath = path.join(uploadsDir, name);
+                fs.writeFileSync(fullPath, file.buffer);
+            }
+
+            const updated = await this.userService.addProviderWorkImage(userId, url);
+            return res.status(200).json(updated);
+        } catch (error: any) {
+            return res.status(500).json({ message: error?.message || 'Server error' });
+        }
+    }
+
+    async removeProviderWorkImage(req: AuthRequest, res: Response) {
+        try {
+            if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+            const userId = new Types.ObjectId(req.userId);
+            const role = await this.userService.getRole(userId);
+            if (role !== 'provider' && role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+            const { url } = req.body || {};
+            const clean = String(url || '').trim();
+            if (!clean) return res.status(400).json({ message: 'url is required' });
+
+            const updated = await this.userService.removeProviderWorkImage(userId, clean);
+            return res.status(200).json(updated);
+        } catch (error: any) {
+            return res.status(500).json({ message: error?.message || 'Server error' });
+        }
+    }
+
     async getUserProfile(req: Request, res: Response) {
         try {
             const userId = req.params.id;

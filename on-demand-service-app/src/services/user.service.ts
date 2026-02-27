@@ -21,9 +21,23 @@ export class UserService {
   async getPublicProfile(userId: Types.ObjectId) {
     return User.findById(userId)
       .select(
-        '_id username firstName lastName gender avatarUrl role ratingAsCustomerAvg ratingAsCustomerCount ratingAsHandymanAvg ratingAsHandymanCount',
+        '_id username firstName lastName gender avatarUrl role ratingAsCustomerAvg ratingAsCustomerCount ratingAsHandymanAvg ratingAsHandymanCount providerProfile.workImageUrls',
       )
       .exec();
+  }
+
+  async addProviderWorkImage(userId: Types.ObjectId, url: string) {
+    const clean = String(url || '').trim();
+    if (!clean) return null;
+    await User.updateOne({ _id: userId }, { $push: { 'providerProfile.workImageUrls': clean } }).exec();
+    return User.findById(userId).select('-password').exec();
+  }
+
+  async removeProviderWorkImage(userId: Types.ObjectId, url: string) {
+    const clean = String(url || '').trim();
+    if (!clean) return null;
+    await User.updateOne({ _id: userId }, { $pull: { 'providerProfile.workImageUrls': clean } }).exec();
+    return User.findById(userId).select('-password').exec();
   }
 
   async addPushToken(userId: Types.ObjectId, token: string) {

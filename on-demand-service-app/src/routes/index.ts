@@ -36,6 +36,8 @@ router.post('/me/push-test', authMiddleware, (req, res) => userController.sendTe
 router.get('/me/transactions', authMiddleware, (req, res) => userController.listMyTransactions(req as any, res));
 router.post('/wallet/topup', authMiddleware, (req, res) => userController.topUpWallet(req as any, res));
 router.put('/providers/me', authMiddleware, (req, res) => userController.updateProviderProfile(req as any, res));
+router.post('/providers/me/work-images', authMiddleware, upload.single('file'), (req, res) => userController.uploadProviderWorkImage(req as any, res));
+router.delete('/providers/me/work-images', authMiddleware, (req, res) => userController.removeProviderWorkImage(req as any, res));
 router.get('/users/:id', authMiddleware, (req, res) => userController.getUserProfile(req, res));
 router.put('/users/:id', authMiddleware, (req, res) => userController.updateUserProfile(req, res));
 

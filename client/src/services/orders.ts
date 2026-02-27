@@ -38,6 +38,8 @@ export type Order = {
   lc?: string;
   price: number;
   priceConfirmed?: boolean;
+  beforeImageUrls?: string[];
+  afterImageUrls?: string[];
   verificationCode?: string;
   startVerificationCode?: string;
   completionVerificationCode?: string;
@@ -66,6 +68,7 @@ export type PublicUser = {
   ratingAsCustomerCount?: number;
   ratingAsHandymanAvg?: number;
   ratingAsHandymanCount?: number;
+  providerProfile?: { workImageUrls?: string[] };
 };
 
 export async function createOrder(input: {

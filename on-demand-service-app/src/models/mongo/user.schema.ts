@@ -13,6 +13,7 @@ export type ProviderProfile = {
   skills: string[];
   available: boolean;
   availabilityNote?: string;
+  workImageUrls?: string[];
 };
 
 interface IUserDocument extends Document {
@@ -63,6 +64,7 @@ const UserSchema = new Schema<IUserDocument>({
     skills: { type: [String], default: [] },
     available: { type: Boolean, default: true },
     availabilityNote: { type: String, required: false },
+    workImageUrls: { type: [String], default: [] },
   },
   ratingAsCustomerAvg: { type: Number, default: 0 },
   ratingAsCustomerCount: { type: Number, default: 0 },
