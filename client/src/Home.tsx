@@ -104,7 +104,7 @@ export default function Home() {
             <div className="landingCard">
               <h4 style={{ marginBottom: 8 }}>2) Get matched</h4>
               <p className="muted" style={{ margin: 0 }}>
-                Your request reaches nearby handymen in your Local Council.
+                Your request reaches nearby handymen in your area.
               </p>
             </div>
             <div className="landingCard">
