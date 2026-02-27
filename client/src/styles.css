@@ -287,6 +287,38 @@ h5 {
   font-size: 14px;
 }
 
+/* Dashboard layout */
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 980px) {
+  .dashboardGrid {
+    grid-template-columns: 380px 1fr;
+    gap: 18px;
+  }
+}
+
+.dashboardStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.walletCard {
+  border: 0;
+  background: linear-gradient(135deg, rgba(0, 230, 118, 1), rgba(0, 200, 83, 1));
+  color: #07110e;
+  box-shadow: var(--shadow);
+}
+
+.walletCard .muted {
+  color: rgba(7, 17, 14, 0.72);
+}
+
 /* Toggle switch */
 .switch {
   position: relative;

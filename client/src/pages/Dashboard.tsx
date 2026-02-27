@@ -1,12 +1,31 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../ui/Button';
-import { Link } from 'react-router-dom';
-import { InlineNotice } from '../ui/Toast';
 import { listMarketplaceOrders, listMyOrders, Order } from '../services/orders';
 import { getMe, listMyTransactions, Me, topUpWallet, Transaction, updateProviderProfile, uploadAvatar } from '../services/me';
-import { assetUrl } from '../lib/assetUrl';
+import { DashboardHeader } from '../components/dashboard/DashboardHeader';
+import { ProfileCard } from '../components/dashboard/ProfileCard';
+import { WalletCard } from '../components/dashboard/WalletCard';
+import { WorkSamplesGrid } from '../components/dashboard/WorkSamplesGrid';
+import { OrdersList } from '../components/dashboard/OrdersList';
+import { MarketplaceList } from '../components/dashboard/MarketplaceList';
+import { TransactionsList } from '../components/dashboard/TransactionsList';
+
+function stars(avg?: number) {
+  const n = Number(avg);
+  if (!Number.isFinite(n) || n <= 0) return '\u2606\u2606\u2606\u2606\u2606';
+  const filled = Math.max(0, Math.min(5, Math.round(n)));
+  return `${'\u2605'.repeat(filled)}${'\u2606'.repeat(5 - filled)}`;
+}
+
+function nameFrom(me: Me | null, claims: any) {
+  const first = me?.firstName || claims?.firstName || '';
+  const last = me?.lastName || claims?.lastName || '';
+  const full = [first, last].filter(Boolean).join(' ').trim();
+  return full || claims?.username || claims?.email || 'there';
+}
 
 export default function Dashboard() {
   const auth = useAuth();
@@ -16,15 +35,8 @@ export default function Dashboard() {
   const [avatarFailed, setAvatarFailed] = React.useState(false);
   const [tx, setTx] = React.useState<Transaction[]>([]);
   const [state, setState] = React.useState<'loading' | 'ready' | 'error'>('loading');
-  const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
-  const isAdmin = auth.claims?.role === 'admin';
 
-  function stars(avg?: number) {
-    const n = Number(avg);
-    if (!Number.isFinite(n) || n <= 0) return '☆☆☆☆☆';
-    const filled = Math.max(0, Math.min(5, Math.round(n)));
-    return `${'★'.repeat(filled)}${'☆'.repeat(5 - filled)}`;
-  }
+  const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
 
   React.useEffect(() => {
     setState('loading');
@@ -77,130 +89,56 @@ export default function Dashboard() {
     };
   }, [isProvider, state]);
 
+  const fullName = nameFrom(me, auth.claims);
+  const roleLabel = me?.role === 'provider' ? 'Handyman' : me?.role === 'customer' ? 'Customer' : me?.role === 'admin' ? 'Admin' : 'User';
+  const rating =
+    me?.role === 'provider'
+      ? { label: `${Number(me?.ratingAsHandymanAvg || 0).toFixed(1)} / 5`, stars: stars(me?.ratingAsHandymanAvg) }
+      : { label: `${Number(me?.ratingAsCustomerAvg || 0).toFixed(1)} / 5`, stars: stars(me?.ratingAsCustomerAvg) };
+
+  async function handleTopUp() {
+    const raw = prompt('Top-up amount (NGN)', '10000');
+    if (!raw) return;
+    const amt = Number(raw);
+    if (!Number.isFinite(amt) || amt <= 0) return alert('Enter a valid amount');
+    try {
+      const updated = await topUpWallet(amt);
+      setMe(updated);
+      const nextTx = await listMyTransactions().catch(() => [] as Transaction[]);
+      setTx(nextTx);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Unable to top up wallet');
+    }
+  }
+
+  async function handleUploadAvatar(file: File) {
+    try {
+      const updated = await uploadAvatar(file);
+      setMe(updated);
+      setAvatarFailed(false);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Unable to upload profile picture');
+    }
+  }
+
   return (
     <Layout>
-      <div className="grid2" style={{ alignItems: 'start' }}>
-        <div className="card">
-          <div className="cardInner">
-            <h2 style={{ marginTop: 0, marginBottom: 6 }}>Dashboard</h2>
-            <p className="muted" style={{ marginTop: 0 }}>
-              Welcome,{' '}
-              <strong>
-                {me?.firstName || auth.claims?.firstName || auth.claims?.username || auth.claims?.email || 'there'}
-                {me?.lastName ? ` ${me.lastName}` : auth.claims?.lastName ? ` ${auth.claims.lastName}` : ''}
-              </strong>
-            </p>
+      <div style={{ marginBottom: 14 }}>
+        <DashboardHeader title="Dashboard" fullName={fullName} />
+      </div>
 
-            <div className="row" style={{ gap: 12, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
-              {me?.avatarUrl && !avatarFailed ? (
-                <img
-                  src={assetUrl(me.avatarUrl)}
-                  alt="Profile"
-                  style={{ width: 88, height: 88, borderRadius: 999, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.14)' }}
-                  onError={() => setAvatarFailed(true)}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: 88,
-                    height: 88,
-                    borderRadius: 999,
-                    border: '1px solid rgba(255,255,255,0.14)',
-                    background: 'rgba(0,0,0,0.12)',
-                  }}
-                />
-              )}
-              <label style={{ display: 'grid', gap: 6 }}>
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Profile picture</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={async e => {
-                    const inputEl = e.currentTarget;
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    try {
-                      const updated = await uploadAvatar(file);
-                      setMe(updated);
-                      setAvatarFailed(false);
-                    } catch (err: any) {
-                      alert(err?.response?.data?.message || 'Unable to upload profile picture');
-                    } finally {
-                      // Avoid "Cannot set properties of null" when the input unmounts/rerenders during async work.
-                      if (inputEl) inputEl.value = '';
-                    }
-                  }}
-                />
-              </label>
-            </div>
-
-            {isProvider && Array.isArray(me?.providerProfile?.workImageUrls) && me!.providerProfile!.workImageUrls!.length ? (
-              <div style={{ marginTop: 14 }}>
-                <div className="pill" style={{ marginBottom: 10 }}>
-                  Work samples
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
-                  {me!.providerProfile!.workImageUrls!.slice(0, 4).map((u, idx) => (
-                    <a key={`${u}-${idx}`} href={assetUrl(u)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-                      <img
-                        src={assetUrl(u)}
-                        alt={`Work ${idx + 1}`}
-                        style={{
-                          width: '100%',
-                          height: 86,
-                          objectFit: 'cover',
-                          borderRadius: 12,
-                          border: '1px solid rgba(255,255,255,0.14)',
-                        }}
-                      />
-                    </a>
-                  ))}
-                </div>
-                <div style={{ marginTop: 10 }}>
-                  <Link to="/provider/settings" style={{ textDecoration: 'none' }}>
-                    <Button variant="ghost">Edit work samples</Button>
-                  </Link>
-                </div>
-              </div>
-            ) : null}
-
-            <div style={{ height: 10 }} />
-            <div className="row" style={{ flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-              <span className="pill">Wallet: ₦{Number(me?.walletBalance || 0).toLocaleString()}</span>
-              <Button
-                variant="ghost"
-                onClick={async () => {
-                  const raw = prompt('Top-up amount (NGN)', '10000');
-                  if (!raw) return;
-                  const amt = Number(raw);
-                  if (!Number.isFinite(amt) || amt <= 0) return alert('Enter a valid amount');
-                  try {
-                    const updated = await topUpWallet(amt);
-                    setMe(updated);
-                    const nextTx = await listMyTransactions().catch(() => [] as Transaction[]);
-                    setTx(nextTx);
-                  } catch (err: any) {
-                    alert(err?.response?.data?.message || 'Unable to top up wallet');
-                  }
-                }}
-              >
-                Top up wallet
-              </Button>
-              {me?.role === 'customer' && typeof me.ratingAsCustomerAvg === 'number' ? (
-                <span className="pill" title={`${me.ratingAsCustomerAvg.toFixed(1)} / 5`}>
-                  Rating: {stars(me.ratingAsCustomerAvg)}
-                </span>
-              ) : null}
-              {me?.role === 'provider' && typeof me.ratingAsHandymanAvg === 'number' ? (
-                <span className="pill" title={`${me.ratingAsHandymanAvg.toFixed(1)} / 5`}>
-                  Rating: {stars(me.ratingAsHandymanAvg)}
-                </span>
-              ) : null}
-            </div>
-
-            {me?.role === 'provider' ? (
-              <div style={{ height: 10 }} />
-            ) : null}
+      <div className="dashboardGrid">
+        <div className="dashboardStack">
+          <ProfileCard
+            fullName={fullName}
+            roleLabel={roleLabel}
+            avatarUrl={me?.avatarUrl}
+            avatarFailed={avatarFailed}
+            onAvatarError={() => setAvatarFailed(true)}
+            onUploadAvatar={handleUploadAvatar}
+            ratingLabel={rating.label}
+            ratingStars={rating.stars}
+          >
             {me?.role === 'provider' ? (
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <span className="muted">Available to take jobs</span>
@@ -221,6 +159,7 @@ export default function Dashboard() {
                           skills: me.providerProfile?.skills || [],
                           available: nextAvailable,
                           availabilityNote: me.providerProfile?.availabilityNote,
+                          workImageUrls: me.providerProfile?.workImageUrls,
                         });
                         setMe(updated);
                       } catch (err: any) {
@@ -233,8 +172,8 @@ export default function Dashboard() {
               </div>
             ) : null}
 
-            <div className="row" style={{ flexWrap: 'wrap', marginTop: 12 }}>
-              {auth.claims?.role === 'customer' ? (
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              {me?.role === 'customer' ? (
                 <Link to="/services" style={{ textDecoration: 'none' }}>
                   <Button>Book a service</Button>
                 </Link>
@@ -243,146 +182,28 @@ export default function Dashboard() {
                 Logout
               </Button>
             </div>
+          </ProfileCard>
 
-            <div style={{ height: 14 }} />
-            <h3 style={{ marginBottom: 10 }}>{isProvider ? 'My jobs' : 'My orders'}</h3>
-            {state === 'error' ? <InlineNotice kind="error">Unable to load orders.</InlineNotice> : null}
-            {state === 'loading' ? <span className="muted">Loading…</span> : null}
-            <div className="col" style={{ gap: 10 }}>
-              {orders.map(o => (
-                <Link key={o._id} to={`/orders/${o._id}`} style={{ textDecoration: 'none' }}>
-                  <div
-                    style={{
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      background: 'rgba(0,0,0,0.12)',
-                      borderRadius: 12,
-                      padding: '10px 12px',
-                    }}
-                  >
-                    <div className="row" style={{ justifyContent: 'space-between' }}>
-                      <strong>{o.title}</strong>
-                      <span className="muted" style={{ fontSize: 13 }}>
-                        {o.status}
-                      </span>
-                    </div>
-                    <div className="muted" style={{ fontSize: 13 }}>
-                      {o.serviceKey}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-              {state === 'ready' && orders.length === 0 ? (
-                <span className="muted">
-                  {isProvider ? 'No assigned jobs yet.' : 'No orders yet. Book a service to get started.'}
-                </span>
-              ) : null}
-            </div>
-          </div>
+          {isProvider ? <WorkSamplesGrid urls={Array.isArray(me?.providerProfile?.workImageUrls) ? me!.providerProfile!.workImageUrls! : []} /> : null}
+
+          <WalletCard balance={Number(me?.walletBalance || 0)} onTopUp={handleTopUp} />
         </div>
 
-        <div className="card">
-          <div className="cardInner">
-            <div className="pill" style={{ marginBottom: 10 }}>
-              Transactions
-            </div>
-            {state === 'loading' ? <span className="muted">Loadingâ€¦</span> : null}
-            <div className="col" style={{ gap: 8 }}>
-              {tx.map(t => (
-                <div
-                  key={t._id}
-                  className="row"
-                  style={{
-                    justifyContent: 'space-between',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    background: 'rgba(0,0,0,0.12)',
-                    borderRadius: 12,
-                    padding: '10px 12px',
-                    gap: 10,
-                  }}
-                >
-                  <div>
-                    <strong>{t.type}</strong>
-                    <div className="muted" style={{ fontSize: 13 }}>
-                      {new Date(t.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <strong>
-                      {t.direction === 'in' ? '+' : '-'}₦{Number(t.amount).toLocaleString()}
-                    </strong>
-                  </div>
-                </div>
-              ))}
-              {state === 'ready' && tx.length === 0 ? <span className="muted">No transactions yet.</span> : null}
-            </div>
-          </div>
-        </div>
+        <div className="dashboardStack">
+          <OrdersList
+            title={isProvider ? 'My jobs' : 'My orders'}
+            state={state}
+            errorText="Unable to load orders."
+            orders={orders}
+            emptyText={isProvider ? 'No assigned jobs yet.' : 'No orders yet. Book a service to get started.'}
+          />
 
-        <div className="card">
-          <div className="cardInner">
-            <div className="pill" style={{ marginBottom: 10 }}>
-              {isProvider ? 'Marketplace' : 'Getting started'}
-            </div>
+          <MarketplaceList isProvider={isProvider} orders={market} state={state} />
 
-            {isProvider ? (
-              <>
-                <h3 style={{ marginTop: 0 }}>Available jobs</h3>
-                <p className="muted" style={{ marginTop: 0 }}>
-                  Accept a job to move it to your assigned list.
-                </p>
-                {auth.claims?.role === 'provider' ? (
-                  <Link to="/provider/settings" style={{ textDecoration: 'none' }}>
-                    <Button variant="ghost">Handyman settings</Button>
-                  </Link>
-                ) : null}
-                <div className="col" style={{ gap: 10 }}>
-                  {market.map(o => (
-                    <Link key={o._id} to={`/orders/${o._id}`} style={{ textDecoration: 'none' }}>
-                      <div
-                        style={{
-                          border: '1px solid rgba(255,255,255,0.12)',
-                          background: 'rgba(0,0,0,0.12)',
-                          borderRadius: 12,
-                          padding: '10px 12px',
-                        }}
-                      >
-                        <div className="row" style={{ justifyContent: 'space-between' }}>
-                          <strong>{o.title}</strong>
-                          <span className="muted" style={{ fontSize: 13 }}>
-                            {o.status}
-                          </span>
-                        </div>
-                        <div className="muted" style={{ fontSize: 13 }}>
-                          {o.serviceKey}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                  {state === 'ready' && market.length === 0 ? (
-                    <span className="muted">No open jobs right now.</span>
-                  ) : null}
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 style={{ marginTop: 0 }}>Next steps</h3>
-                <ol className="muted" style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 8 }}>
-                  <li>Pick a service category</li>
-                  <li>Create an order request</li>
-                  <li>Track progress from the timeline</li>
-                </ol>
-              </>
-            )}
-
-            {isAdmin ? (
-              <>
-                <div style={{ height: 14 }} />
-                <InlineNotice kind="info">Admin role detected. Next we’ll add an admin orders console.</InlineNotice>
-              </>
-            ) : null}
-          </div>
+          <TransactionsList state={state} items={tx} />
         </div>
       </div>
     </Layout>
   );
 }
+
