@@ -14,6 +14,11 @@ export type ProviderProfile = {
   available: boolean;
   availabilityNote?: string;
   workImageUrls?: string[];
+  address?: string;
+  passportPhotoUrl?: string;
+  idType?: 'nin' | 'voters_card';
+  idNumber?: string;
+  idImageUrl?: string;
 };
 
 interface IUserDocument extends Document {
@@ -65,6 +70,11 @@ const UserSchema = new Schema<IUserDocument>({
     available: { type: Boolean, default: true },
     availabilityNote: { type: String, required: false },
     workImageUrls: { type: [String], default: [] },
+    address: { type: String, required: false, trim: true },
+    passportPhotoUrl: { type: String, required: false, trim: true },
+    idType: { type: String, required: false, enum: ['nin', 'voters_card'] },
+    idNumber: { type: String, required: false, trim: true },
+    idImageUrl: { type: String, required: false, trim: true },
   },
   ratingAsCustomerAvg: { type: Number, default: 0 },
   ratingAsCustomerCount: { type: Number, default: 0 },

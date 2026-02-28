@@ -8,6 +8,7 @@ import { Transaction } from '../models/mongo/transaction.schema';
 import { getUploadsRootDir } from '../utils/uploads';
 import { pushService } from '../services/push.service';
 import { uploadImage } from '../services/media.service';
+import { User } from '../models/mongo/user.schema';
 
 type AuthRequest = Request & { userId?: string };
 
@@ -37,7 +38,7 @@ export class UserController {
             const role = await this.userService.getRole(userId);
             if (role !== 'provider' && role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
-            const { zip, country, state, lga, lc, skills, available, availabilityNote } = req.body || {};
+            const { zip, country, state, lga, lc, skills, available, availabilityNote, address, idType, idNumber, workImageUrls } = req.body || {};
             const updated = await this.userService.updateProviderProfile(userId, {
                 zip,
                 country,
@@ -47,6 +48,10 @@ export class UserController {
                 skills,
                 available,
                 availabilityNote,
+                address,
+                idType,
+                idNumber,
+                workImageUrls,
             });
             return res.status(200).json(updated);
         } catch (error) {
@@ -117,6 +122,82 @@ export class UserController {
 
             const updated = await this.userService.removeProviderWorkImage(userId, clean);
             return res.status(200).json(updated);
+        } catch (error: any) {
+            return res.status(500).json({ message: error?.message || 'Server error' });
+        }
+    }
+
+    async uploadProviderPassport(req: AuthRequest, res: Response) {
+        try {
+            if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+            const userId = new Types.ObjectId(req.userId);
+            const role = await this.userService.getRole(userId);
+            if (role !== 'provider' && role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+            const anyReq = req as any;
+            const file = anyReq.file as { mimetype?: string; buffer?: Buffer } | undefined;
+            if (!file || !file.buffer) return res.status(400).json({ message: 'file is required' });
+            if (!file.mimetype || !file.mimetype.startsWith('image/')) return res.status(400).json({ message: 'Only image uploads are allowed' });
+
+            const ext =
+                file.mimetype === 'image/png'
+                    ? 'png'
+                    : file.mimetype === 'image/webp'
+                      ? 'webp'
+                      : file.mimetype === 'image/gif'
+                        ? 'gif'
+                        : 'jpg';
+
+            const name = `${req.userId}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
+            const cloudUrl = await uploadImage({ buffer: file.buffer, folder: `handyman/verification/${req.userId}/passport`, mimetype: file.mimetype });
+            const url = cloudUrl || `/uploads/verification/${req.userId}/passport/${name}`;
+            if (!cloudUrl) {
+                const uploadsDir = path.join(getUploadsRootDir(), 'verification', req.userId, 'passport');
+                fs.mkdirSync(uploadsDir, { recursive: true });
+                fs.writeFileSync(path.join(uploadsDir, name), file.buffer);
+            }
+
+            await User.updateOne({ _id: userId }, { $set: { 'providerProfile.passportPhotoUrl': url } }).exec();
+            const fresh = await this.userService.getById(req.userId);
+            return res.status(200).json(fresh);
+        } catch (error: any) {
+            return res.status(500).json({ message: error?.message || 'Server error' });
+        }
+    }
+
+    async uploadProviderIdImage(req: AuthRequest, res: Response) {
+        try {
+            if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+            const userId = new Types.ObjectId(req.userId);
+            const role = await this.userService.getRole(userId);
+            if (role !== 'provider' && role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+            const anyReq = req as any;
+            const file = anyReq.file as { mimetype?: string; buffer?: Buffer } | undefined;
+            if (!file || !file.buffer) return res.status(400).json({ message: 'file is required' });
+            if (!file.mimetype || !file.mimetype.startsWith('image/')) return res.status(400).json({ message: 'Only image uploads are allowed' });
+
+            const ext =
+                file.mimetype === 'image/png'
+                    ? 'png'
+                    : file.mimetype === 'image/webp'
+                      ? 'webp'
+                      : file.mimetype === 'image/gif'
+                        ? 'gif'
+                        : 'jpg';
+
+            const name = `${req.userId}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
+            const cloudUrl = await uploadImage({ buffer: file.buffer, folder: `handyman/verification/${req.userId}/id`, mimetype: file.mimetype });
+            const url = cloudUrl || `/uploads/verification/${req.userId}/id/${name}`;
+            if (!cloudUrl) {
+                const uploadsDir = path.join(getUploadsRootDir(), 'verification', req.userId, 'id');
+                fs.mkdirSync(uploadsDir, { recursive: true });
+                fs.writeFileSync(path.join(uploadsDir, name), file.buffer);
+            }
+
+            await User.updateOne({ _id: userId }, { $set: { 'providerProfile.idImageUrl': url } }).exec();
+            const fresh = await this.userService.getById(req.userId);
+            return res.status(200).json(fresh);
         } catch (error: any) {
             return res.status(500).json({ message: error?.message || 'Server error' });
         }

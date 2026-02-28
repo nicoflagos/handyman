@@ -27,7 +27,8 @@ export default function CreateOrder() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState<NigeriaLocationValue>({ state: '', lga: '', lc: '', street: '' });
-  const [scheduledAt, setScheduledAt] = useState('');
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
   const [price, setPrice] = useState('');
 
   const address = useMemo(() => {
@@ -75,6 +76,12 @@ export default function CreateOrder() {
     }
     setSubmitState('submitting');
     try {
+      const scheduledAt =
+        scheduledDate && scheduledTime
+          ? `${scheduledDate}T${scheduledTime}`
+          : scheduledDate
+            ? `${scheduledDate}T09:00`
+            : undefined;
       const order = await createOrder({
         serviceKey,
         title: title || `Request: ${serviceKey}`,
@@ -85,7 +92,7 @@ export default function CreateOrder() {
         lga: location.lga,
         lc: location.lc,
         price: numericPrice,
-        scheduledAt: scheduledAt || undefined,
+        scheduledAt,
       });
       navigate(`/orders/${order._id}`, { replace: true });
     } catch (err: any) {
@@ -173,12 +180,18 @@ export default function CreateOrder() {
                 error={insufficientFunds ? 'Insufficient wallet balance for this booking.' : null}
               />
               <Input
-                label="Preferred date/time"
-                value={scheduledAt}
-                onChange={e => setScheduledAt(e.target.value)}
-                type="datetime-local"
-                placeholder=""
-                hint="Optional. Choose when you want the handyman to come."
+                label="Preferred date"
+                value={scheduledDate}
+                onChange={e => setScheduledDate(e.target.value)}
+                type="date"
+                hint="Optional. Choose your preferred date."
+              />
+              <Input
+                label="Preferred time"
+                value={scheduledTime}
+                onChange={e => setScheduledTime(e.target.value)}
+                type="time"
+                hint="Optional. If you leave this empty, we’ll default to 09:00."
               />
 
               {error ? <InlineNotice kind="error">{error}</InlineNotice> : null}

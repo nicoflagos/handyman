@@ -14,7 +14,7 @@ export function MarketplaceList({
 }) {
   if (!isProvider) return null;
   return (
-    <div className="card">
+    <div className="card" id="marketplace">
       <div className="cardInner">
         <div className="pill" style={{ marginBottom: 10 }}>
           Marketplace
@@ -58,4 +58,3 @@ export function MarketplaceList({
     </div>
   );
 }
-

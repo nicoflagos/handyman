@@ -2,7 +2,7 @@ import React from 'react';
 import { Layout } from '../components/Layout';
 import { InlineNotice } from '../ui/Toast';
 import { Button } from '../ui/Button';
-import { getMe, removeWorkImage, updateProviderProfile, uploadWorkImage } from '../services/me';
+import { getMe, removeWorkImage, updateProviderProfile, uploadProviderIdImage, uploadProviderPassport, uploadWorkImage } from '../services/me';
 import { listServices, ServiceItem } from '../services/catalog';
 import { NigeriaLocationSelect, NigeriaLocationValue } from '../components/NigeriaLocationSelect';
 import { assetUrl } from '../lib/assetUrl';
@@ -16,6 +16,17 @@ export default function ProviderSettings() {
   const [workImageUrls, setWorkImageUrls] = React.useState<string[]>([]);
   const [workBusy, setWorkBusy] = React.useState(false);
   const workFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const [profileAddress, setProfileAddress] = React.useState('');
+  const [idType, setIdType] = React.useState<'nin' | 'voters_card' | ''>('');
+  const [idNumber, setIdNumber] = React.useState('');
+  const [passportPhotoUrl, setPassportPhotoUrl] = React.useState('');
+  const [idImageUrl, setIdImageUrl] = React.useState('');
+  const [profileBusy, setProfileBusy] = React.useState(false);
+  const passportInputRef = React.useRef<HTMLInputElement | null>(null);
+  const idImageInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [profileErr, setProfileErr] = React.useState<string | null>(null);
+
   const [state, setState] = React.useState<'loading' | 'ready' | 'error'>('loading');
   const [saving, setSaving] = React.useState(false);
   const [msg, setMsg] = React.useState<{ kind: 'error' | 'success'; text: string } | null>(null);
@@ -34,6 +45,11 @@ export default function ProviderSettings() {
         setAvailable(me.providerProfile?.available ?? true);
         setAvailabilityNote(me.providerProfile?.availabilityNote || '');
         setWorkImageUrls(Array.isArray(me.providerProfile?.workImageUrls) ? me.providerProfile!.workImageUrls! : []);
+        setProfileAddress(me.providerProfile?.address || '');
+        setIdType((me.providerProfile?.idType as any) || '');
+        setIdNumber(me.providerProfile?.idNumber || '');
+        setPassportPhotoUrl(me.providerProfile?.passportPhotoUrl || '');
+        setIdImageUrl(me.providerProfile?.idImageUrl || '');
         const map: Record<string, boolean> = {};
         for (const s of svc) map[s.key] = (me.providerProfile?.skills || []).includes(s.key);
         setSkills(map);
@@ -70,6 +86,50 @@ export default function ProviderSettings() {
     }
   }
 
+  function validateProfile(): string | null {
+    if (!profileAddress.trim()) return 'Address is required';
+    if (!idType) return 'ID type is required';
+    const cleaned = idNumber.trim().replace(/[\s-]/g, '');
+    if (!cleaned) return 'ID number is required';
+    if (idType === 'nin' && !/^\d{11}$/.test(cleaned)) return 'NIN must be exactly 11 digits';
+    if (idType === 'voters_card' && !/^[A-Z0-9]{19}$/i.test(cleaned)) return 'Voters Card must be exactly 19 characters';
+    if (!passportPhotoUrl) return 'Passport photo is required';
+    if (!idImageUrl) return 'ID image is required';
+    return null;
+  }
+
+  async function saveProfile() {
+    setProfileErr(null);
+    const err = validateProfile();
+    if (err) return setProfileErr(err);
+
+    setProfileBusy(true);
+    setMsg(null);
+    try {
+      const selected = Object.entries(skills)
+        .filter(([, v]) => v)
+        .map(([k]) => k);
+      await updateProviderProfile({
+        country: 'Nigeria',
+        state: location.state,
+        lga: location.lga,
+        lc: location.lc,
+        skills: selected,
+        available,
+        availabilityNote,
+        workImageUrls,
+        address: profileAddress.trim(),
+        idType: idType as any,
+        idNumber: idNumber.trim(),
+      });
+      setMsg({ kind: 'success', text: 'Profile updated.' });
+    } catch (err: any) {
+      setProfileErr(err?.response?.data?.message || 'Unable to update profile');
+    } finally {
+      setProfileBusy(false);
+    }
+  }
+
   async function save() {
     setMsg(null);
     if (!location.state || !location.lga || !location.lc) {
@@ -89,6 +149,10 @@ export default function ProviderSettings() {
         skills: selected,
         available,
         availabilityNote,
+        workImageUrls,
+        address: profileAddress.trim() || undefined,
+        idType: (idType as any) || undefined,
+        idNumber: idNumber.trim() || undefined,
       });
       setMsg({ kind: 'success', text: 'Saved handyman settings.' });
     } catch (err: any) {
@@ -115,6 +179,186 @@ export default function ProviderSettings() {
             {state === 'ready' ? (
               <div className="col" style={{ marginTop: 12 }}>
                 <NigeriaLocationSelect value={location} onChange={setLocation} showStreet={false} />
+
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)', marginBottom: 8 }}>Profile verification</div>
+                  {profileErr ? <InlineNotice kind="error">{profileErr}</InlineNotice> : null}
+
+                  <label style={{ display: 'grid', gap: 6 }}>
+                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Address</span>
+                    <input
+                      value={profileAddress}
+                      onChange={e => setProfileAddress(e.target.value)}
+                      placeholder="Your full address"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        border: '1px solid rgba(255,255,255,0.14)',
+                        background: 'rgba(0,0,0,0.18)',
+                        color: 'rgba(255,255,255,0.92)',
+                        outline: 'none',
+                      }}
+                    />
+                  </label>
+
+                  <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+                    <label style={{ display: 'grid', gap: 6, flex: 1, minWidth: 220 }}>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>ID type</span>
+                      <select
+                        value={idType}
+                        onChange={e => setIdType(e.target.value as any)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: 12,
+                          border: '1px solid rgba(255,255,255,0.14)',
+                          background: 'rgba(0,0,0,0.18)',
+                          color: 'rgba(255,255,255,0.92)',
+                          outline: 'none',
+                        }}
+                      >
+                        <option value="">Select</option>
+                        <option value="nin">NIN</option>
+                        <option value="voters_card">Voters card</option>
+                      </select>
+                    </label>
+
+                    <label style={{ display: 'grid', gap: 6, flex: 1, minWidth: 220 }}>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>ID number</span>
+                      <input
+                        value={idNumber}
+                        onChange={e => setIdNumber(e.target.value)}
+                        placeholder={idType === 'nin' ? '11 digits' : idType === 'voters_card' ? '19 characters' : ''}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: 12,
+                          border: '1px solid rgba(255,255,255,0.14)',
+                          background: 'rgba(0,0,0,0.18)',
+                          color: 'rgba(255,255,255,0.92)',
+                          outline: 'none',
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  <div style={{ marginTop: 10 }}>
+                    <input
+                      ref={passportInputRef}
+                      type="file"
+                      accept="image/*"
+                      disabled={profileBusy}
+                      style={{ display: 'none' }}
+                      onChange={async e => {
+                        const file = e.target.files?.[0];
+                        e.currentTarget.value = '';
+                        if (!file) return;
+                        setProfileBusy(true);
+                        setProfileErr(null);
+                        try {
+                          const updated = await uploadProviderPassport(file);
+                          setPassportPhotoUrl(updated.providerProfile?.passportPhotoUrl || '');
+                          setMsg({ kind: 'success', text: 'Passport photo uploaded.' });
+                        } catch (err: any) {
+                          setProfileErr(err?.response?.data?.message || 'Unable to upload passport photo');
+                        } finally {
+                          setProfileBusy(false);
+                        }
+                      }}
+                    />
+
+                    <input
+                      ref={idImageInputRef}
+                      type="file"
+                      accept="image/*"
+                      disabled={profileBusy}
+                      style={{ display: 'none' }}
+                      onChange={async e => {
+                        const file = e.target.files?.[0];
+                        e.currentTarget.value = '';
+                        if (!file) return;
+                        setProfileBusy(true);
+                        setProfileErr(null);
+                        try {
+                          const updated = await uploadProviderIdImage(file);
+                          setIdImageUrl(updated.providerProfile?.idImageUrl || '');
+                          setMsg({ kind: 'success', text: 'ID image uploaded.' });
+                        } catch (err: any) {
+                          setProfileErr(err?.response?.data?.message || 'Unable to upload ID image');
+                        } finally {
+                          setProfileBusy(false);
+                        }
+                      }}
+                    />
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+                      <div className="landingCard">
+                        <div className="muted" style={{ fontSize: 13, marginBottom: 8 }}>
+                          Passport photo
+                        </div>
+                        {passportPhotoUrl ? (
+                          <img
+                            src={assetUrl(passportPhotoUrl)}
+                            alt="Passport"
+                            style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 12 }}
+                          />
+                        ) : (
+                          <div
+                            className="muted"
+                            style={{
+                              height: 120,
+                              display: 'grid',
+                              placeItems: 'center',
+                              borderRadius: 12,
+                              border: '1px dashed rgba(255,255,255,0.18)',
+                            }}
+                          >
+                            Not uploaded
+                          </div>
+                        )}
+                        <div style={{ marginTop: 10 }}>
+                          <Button variant="ghost" loading={profileBusy} onClick={() => passportInputRef.current?.click()}>
+                            {passportPhotoUrl ? 'Replace' : 'Upload'}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="landingCard">
+                        <div className="muted" style={{ fontSize: 13, marginBottom: 8 }}>
+                          ID image
+                        </div>
+                        {idImageUrl ? (
+                          <img src={assetUrl(idImageUrl)} alt="ID" style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 12 }} />
+                        ) : (
+                          <div
+                            className="muted"
+                            style={{
+                              height: 120,
+                              display: 'grid',
+                              placeItems: 'center',
+                              borderRadius: 12,
+                              border: '1px dashed rgba(255,255,255,0.18)',
+                            }}
+                          >
+                            Not uploaded
+                          </div>
+                        )}
+                        <div style={{ marginTop: 10 }}>
+                          <Button variant="ghost" loading={profileBusy} onClick={() => idImageInputRef.current?.click()}>
+                            {idImageUrl ? 'Replace' : 'Upload'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="row" style={{ justifyContent: 'flex-end', marginTop: 10 }}>
+                      <Button loading={profileBusy} onClick={saveProfile}>
+                        Update profile
+                      </Button>
+                    </div>
+                  </div>
+                </div>
 
                 <div style={{ marginTop: 10 }}>
                   <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)', marginBottom: 8 }}>Work images (up to 4)</div>

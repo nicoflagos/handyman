@@ -172,6 +172,21 @@ export default function Dashboard() {
               </div>
             ) : null}
 
+            {isProvider ? (
+              <div className="row" style={{ flexWrap: 'wrap' }}>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    const el = document.getElementById('marketplace');
+                    if (!el) return;
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                >
+                  View marketplace ({market.length})
+                </Button>
+              </div>
+            ) : null}
+
             <div className="row" style={{ flexWrap: 'wrap' }}>
               {me?.role === 'customer' ? (
                 <Link to="/services" style={{ textDecoration: 'none' }}>

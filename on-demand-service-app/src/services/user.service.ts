@@ -75,6 +75,10 @@ export class UserService {
       skills?: string[];
       available?: boolean;
       availabilityNote?: string;
+      workImageUrls?: string[];
+      address?: string;
+      idType?: 'nin' | 'voters_card';
+      idNumber?: string;
     },
   ) {
     const update: any = {};
@@ -86,6 +90,20 @@ export class UserService {
     if (Array.isArray(input.skills)) update['providerProfile.skills'] = input.skills;
     if (typeof input.available === 'boolean') update['providerProfile.available'] = input.available;
     if (typeof input.availabilityNote === 'string') update['providerProfile.availabilityNote'] = input.availabilityNote;
+    if (Array.isArray(input.workImageUrls)) update['providerProfile.workImageUrls'] = input.workImageUrls;
+    if (typeof input.address === 'string') update['providerProfile.address'] = input.address.trim();
+
+    if (typeof input.idType === 'string') {
+      if (input.idType !== 'nin' && input.idType !== 'voters_card') throw new Error('Invalid idType');
+      update['providerProfile.idType'] = input.idType;
+    }
+    if (typeof input.idNumber === 'string') {
+      const idType = (typeof input.idType === 'string' ? input.idType : undefined) as 'nin' | 'voters_card' | undefined;
+      const cleaned = input.idNumber.trim().replace(/[\s-]/g, '');
+      if (idType === 'nin' && !/^\d{11}$/.test(cleaned)) throw new Error('NIN must be exactly 11 digits');
+      if (idType === 'voters_card' && !/^[A-Z0-9]{19}$/i.test(cleaned)) throw new Error('Voters Card must be exactly 19 characters');
+      update['providerProfile.idNumber'] = cleaned;
+    }
     return User.findByIdAndUpdate(userId, { $set: update }, { new: true }).select('-password').exec();
   }
 
