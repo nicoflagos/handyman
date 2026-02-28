@@ -50,6 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <nav className="row" style={{ gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <TopLink to="/" label="Home" />
               {auth.token ? <TopLink to="/dashboard" label="Dashboard" /> : null}
+              {auth.token && isProvider ? <TopLink to="/dashboard#marketplace" label="Marketplace" /> : null}
               {auth.token && isProvider ? <TopLink to="/provider/settings" label="Handyman settings" /> : null}
               {isAdmin ? <TopLink to="/admin" label="Admin" /> : null}
               {auth.token ? null : <TopLink to="/login" label="Login" />}
