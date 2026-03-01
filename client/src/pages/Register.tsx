@@ -13,6 +13,7 @@ export default function Register() {
   const [gender, setGender] = useState<'male' | 'female' | 'other'>('male');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<'customer' | 'provider'>('customer');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -108,15 +109,23 @@ export default function Register() {
                   </select>
                   <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Handymen can accept jobs from the marketplace.</span>
                 </label>
-                <Input
-                  label="Password"
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  autoComplete="new-password"
-                  placeholder="Create a password"
-                  hint="At least 8 characters is recommended."
-                />
+                <div className="col" style={{ gap: 8 }}>
+                  <Input
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    autoComplete="new-password"
+                    placeholder="Create a password"
+                    hint="At least 8 characters is recommended."
+                  />
+                  <label className="row" style={{ gap: 10, alignItems: 'center' }}>
+                    <input type="checkbox" checked={showPassword} onChange={e => setShowPassword(e.target.checked)} />
+                    <span className="muted" style={{ fontSize: 13 }}>
+                      Show password
+                    </span>
+                  </label>
+                </div>
                 {error ? <InlineNotice kind="error">{error}</InlineNotice> : null}
                 {success ? <InlineNotice kind="success">{success}</InlineNotice> : null}
                 <div className="row" style={{ justifyContent: 'space-between', marginTop: 4 }}>
