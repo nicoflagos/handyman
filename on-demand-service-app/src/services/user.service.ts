@@ -21,7 +21,7 @@ export class UserService {
   async getPublicProfile(userId: Types.ObjectId) {
     return User.findById(userId)
       .select(
-        '_id username firstName lastName gender avatarUrl role ratingAsCustomerAvg ratingAsCustomerCount ratingAsHandymanAvg ratingAsHandymanCount providerProfile.workImageUrls',
+        '_id username firstName lastName gender avatarUrl role ratingAsCustomerAvg ratingAsCustomerCount ratingAsHandymanAvg ratingAsHandymanCount providerProfile.workImageUrls providerProfile.verified providerProfile.verifiedAt',
       )
       .exec();
   }
@@ -98,7 +98,11 @@ export class UserService {
       update['providerProfile.idType'] = input.idType;
     }
     if (typeof input.idNumber === 'string') {
-      const idType = (typeof input.idType === 'string' ? input.idType : undefined) as 'nin' | 'voters_card' | undefined;
+      let idType = (typeof input.idType === 'string' ? input.idType : undefined) as 'nin' | 'voters_card' | undefined;
+      if (!idType) {
+        const current = await User.findById(userId).select('providerProfile.idType').exec();
+        idType = (current as any)?.providerProfile?.idType as any;
+      }
       const cleaned = input.idNumber.trim().replace(/[\s-]/g, '');
       if (idType === 'nin' && !/^\d{11}$/.test(cleaned)) throw new Error('NIN must be exactly 11 digits');
       if (idType === 'voters_card' && !/^[A-Z0-9]{19}$/i.test(cleaned)) throw new Error('Voters Card must be exactly 19 characters');

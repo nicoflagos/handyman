@@ -138,6 +138,7 @@ export default function Dashboard() {
             onUploadAvatar={handleUploadAvatar}
             ratingLabel={rating.label}
             ratingStars={rating.stars}
+            verified={me?.role === 'provider' ? !!me?.providerProfile?.verified : undefined}
           >
             {me?.role === 'provider' ? (
               <div className="row" style={{ justifyContent: 'space-between' }}>

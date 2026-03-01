@@ -22,6 +22,7 @@ export default function ProviderSettings() {
   const [idNumber, setIdNumber] = React.useState('');
   const [passportPhotoUrl, setPassportPhotoUrl] = React.useState('');
   const [idImageUrl, setIdImageUrl] = React.useState('');
+  const [verified, setVerified] = React.useState(false);
   const [profileBusy, setProfileBusy] = React.useState(false);
   const passportInputRef = React.useRef<HTMLInputElement | null>(null);
   const idImageInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -50,6 +51,7 @@ export default function ProviderSettings() {
         setIdNumber(me.providerProfile?.idNumber || '');
         setPassportPhotoUrl(me.providerProfile?.passportPhotoUrl || '');
         setIdImageUrl(me.providerProfile?.idImageUrl || '');
+        setVerified(!!me.providerProfile?.verified);
         const map: Record<string, boolean> = {};
         for (const s of svc) map[s.key] = (me.providerProfile?.skills || []).includes(s.key);
         setSkills(map);
@@ -93,7 +95,6 @@ export default function ProviderSettings() {
     if (!cleaned) return 'ID number is required';
     if (idType === 'nin' && !/^\d{11}$/.test(cleaned)) return 'NIN must be exactly 11 digits';
     if (idType === 'voters_card' && !/^[A-Z0-9]{19}$/i.test(cleaned)) return 'Voters Card must be exactly 19 characters';
-    if (!passportPhotoUrl) return 'Passport photo is required';
     if (!idImageUrl) return 'ID image is required';
     return null;
   }
@@ -109,7 +110,7 @@ export default function ProviderSettings() {
       const selected = Object.entries(skills)
         .filter(([, v]) => v)
         .map(([k]) => k);
-      await updateProviderProfile({
+      const updated = await updateProviderProfile({
         country: 'Nigeria',
         state: location.state,
         lga: location.lga,
@@ -122,6 +123,7 @@ export default function ProviderSettings() {
         idType: idType as any,
         idNumber: idNumber.trim(),
       });
+      setVerified(!!updated.providerProfile?.verified);
       setMsg({ kind: 'success', text: 'Profile updated.' });
     } catch (err: any) {
       setProfileErr(err?.response?.data?.message || 'Unable to update profile');
@@ -181,7 +183,23 @@ export default function ProviderSettings() {
                 <NigeriaLocationSelect value={location} onChange={setLocation} showStreet={false} />
 
                 <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)', marginBottom: 8 }}>Profile verification</div>
+                  <div className="row" style={{ justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Profile verification</div>
+                    <span
+                      className="pill"
+                      style={
+                        verified
+                          ? {
+                              borderColor: 'rgba(0, 230, 118, 0.55)',
+                              color: 'rgba(0, 230, 118, 0.95)',
+                              background: 'rgba(0, 230, 118, 0.08)',
+                            }
+                          : undefined
+                      }
+                    >
+                      {verified ? 'Verified' : 'Not verified'}
+                    </span>
+                  </div>
                   {profileErr ? <InlineNotice kind="error">{profileErr}</InlineNotice> : null}
 
                   <label style={{ display: 'grid', gap: 6 }}>
@@ -283,6 +301,7 @@ export default function ProviderSettings() {
                         try {
                           const updated = await uploadProviderIdImage(file);
                           setIdImageUrl(updated.providerProfile?.idImageUrl || '');
+                          setVerified(!!updated.providerProfile?.verified);
                           setMsg({ kind: 'success', text: 'ID image uploaded.' });
                         } catch (err: any) {
                           setProfileErr(err?.response?.data?.message || 'Unable to upload ID image');
@@ -295,7 +314,7 @@ export default function ProviderSettings() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
                       <div className="landingCard">
                         <div className="muted" style={{ fontSize: 13, marginBottom: 8 }}>
-                          Passport photo
+                          Passport photo (optional)
                         </div>
                         {passportPhotoUrl ? (
                           <img

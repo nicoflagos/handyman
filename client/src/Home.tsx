@@ -128,14 +128,12 @@ export default function Home() {
 
           <div className="grid4">
             {popular.map(s => (
-              <Link key={s.key} to={auth.token ? '/services' : '/register'} style={{ textDecoration: 'none' }}>
-                <div className="landingCard" style={{ height: '100%' }}>
-                  <h5 style={{ marginBottom: 6 }}>{s.name}</h5>
-                  <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-                    {s.description}
-                  </p>
-                </div>
-              </Link>
+              <div key={s.key} className="landingCard" style={{ height: '100%', cursor: 'default' }}>
+                <h5 style={{ marginBottom: 6 }}>{s.name}</h5>
+                <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+                  {s.description}
+                </p>
+              </div>
             ))}
           </div>
         </div>

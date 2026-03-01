@@ -68,7 +68,7 @@ export type PublicUser = {
   ratingAsCustomerCount?: number;
   ratingAsHandymanAvg?: number;
   ratingAsHandymanCount?: number;
-  providerProfile?: { workImageUrls?: string[] };
+  providerProfile?: { workImageUrls?: string[]; verified?: boolean; verifiedAt?: string };
 };
 
 export async function createOrder(input: {

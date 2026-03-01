@@ -15,6 +15,18 @@ type AuthRequest = Request & { userId?: string };
 export class UserController {
     constructor(private userService: UserService) {}
 
+    private computeProviderVerified(profile: any): { verified: boolean; verifiedAt?: Date } {
+        const address = String(profile?.address || '').trim();
+        const idType = profile?.idType as 'nin' | 'voters_card' | undefined;
+        const idNumber = String(profile?.idNumber || '').trim().replace(/[\s-]/g, '');
+        const idImageUrl = String(profile?.idImageUrl || '').trim();
+
+        if (!address || !idType || !idNumber || !idImageUrl) return { verified: false };
+        if (idType === 'nin' && !/^\d{11}$/.test(idNumber)) return { verified: false };
+        if (idType === 'voters_card' && !/^[A-Z0-9]{19}$/i.test(idNumber)) return { verified: false };
+        return { verified: true, verifiedAt: new Date() };
+    }
+
     async getMe(req: AuthRequest, res: Response) {
         try {
             if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
@@ -39,7 +51,7 @@ export class UserController {
             if (role !== 'provider' && role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
             const { zip, country, state, lga, lc, skills, available, availabilityNote, address, idType, idNumber, workImageUrls } = req.body || {};
-            const updated = await this.userService.updateProviderProfile(userId, {
+            await this.userService.updateProviderProfile(userId, {
                 zip,
                 country,
                 state,
@@ -53,7 +65,18 @@ export class UserController {
                 idNumber,
                 workImageUrls,
             });
-            return res.status(200).json(updated);
+
+            // Auto-mark as verified when required verification fields are present (best-effort).
+            const freshAny: any = await this.userService.getById(req.userId);
+            const next = this.computeProviderVerified(freshAny?.providerProfile);
+            await User.updateOne(
+                { _id: userId },
+                next.verified
+                    ? { $set: { 'providerProfile.verified': true, 'providerProfile.verifiedAt': next.verifiedAt } }
+                    : { $set: { 'providerProfile.verified': false }, $unset: { 'providerProfile.verifiedAt': 1 } },
+            ).exec();
+            const fresh = await this.userService.getById(req.userId);
+            return res.status(200).json(fresh);
         } catch (error) {
             return res.status(500).json({ message: 'Server error', error });
         }
@@ -196,6 +219,16 @@ export class UserController {
             }
 
             await User.updateOne({ _id: userId }, { $set: { 'providerProfile.idImageUrl': url } }).exec();
+
+            // Recompute verified status after ID image upload.
+            const freshAny: any = await this.userService.getById(req.userId);
+            const next = this.computeProviderVerified(freshAny?.providerProfile);
+            await User.updateOne(
+                { _id: userId },
+                next.verified
+                    ? { $set: { 'providerProfile.verified': true, 'providerProfile.verifiedAt': next.verifiedAt } }
+                    : { $set: { 'providerProfile.verified': false }, $unset: { 'providerProfile.verifiedAt': 1 } },
+            ).exec();
             const fresh = await this.userService.getById(req.userId);
             return res.status(200).json(fresh);
         } catch (error: any) {

@@ -366,12 +366,31 @@ export class OrdersController {
       const title = String((order as any).title || 'Order');
       const customerId = (order as any).customerId as Types.ObjectId | undefined;
       const providerId = (order as any).providerId as Types.ObjectId | undefined;
+
+      // Include verified status (and basic public profile info) so the customer sees it immediately on accept.
+      const handymanProfile = providerId ? await this.userService.getPublicProfile(providerId) : null;
+      const handymanObj: any = handymanProfile?.toObject ? handymanProfile.toObject() : handymanProfile;
+      const handymanName =
+        [handymanObj?.firstName, handymanObj?.lastName].filter(Boolean).join(' ') || String(handymanObj?.username || '');
+      const handymanVerified = !!handymanObj?.providerProfile?.verified;
+      const handymanAvatarUrl = handymanObj?.avatarUrl ? String(handymanObj.avatarUrl) : '';
+      const handymanRating =
+        typeof handymanObj?.ratingAsHandymanAvg === 'number' ? handymanObj.ratingAsHandymanAvg.toFixed(1) : '';
+
       if (customerId) {
         void pushService
           .notifyUser(customerId, {
             title: 'Order accepted',
-            body: `Your order "${title}" was accepted by a handyman.`,
-            data: { event: 'order_accepted', orderId },
+            body: `Your order "${title}" was accepted by${handymanVerified ? ' a verified' : ' a'} handyman.`,
+            data: {
+              event: 'order_accepted',
+              orderId,
+              handymanId: providerId ? String(providerId) : '',
+              handymanName,
+              handymanVerified: handymanVerified ? '1' : '0',
+              handymanRating,
+              handymanAvatarUrl,
+            },
           })
           .catch(err => console.log(`[push] order accepted -> customer failed: ${(err as any)?.message || err}`));
       }

@@ -525,6 +525,11 @@ export default function OrderDetail() {
                               .join(' ') || order.handymanInfo.username}
                           </span>
                           {order.handymanInfo.gender ? <span className="pill">Gender: {order.handymanInfo.gender}</span> : null}
+                          {order.handymanInfo.providerProfile?.verified ? (
+                            <span className="pill" title="Verified">
+                              Verified
+                            </span>
+                          ) : null}
                           
                           {typeof order.handymanInfo.ratingAsHandymanAvg === 'number' ? (
                             <span className="pill" title={`${order.handymanInfo.ratingAsHandymanAvg.toFixed(1)} / 5`}>

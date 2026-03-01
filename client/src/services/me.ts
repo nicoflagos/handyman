@@ -16,6 +16,8 @@ export type ProviderProfile = {
   idType?: 'nin' | 'voters_card';
   idNumber?: string;
   idImageUrl?: string;
+  verified?: boolean;
+  verifiedAt?: string;
 };
 
 export type Me = {

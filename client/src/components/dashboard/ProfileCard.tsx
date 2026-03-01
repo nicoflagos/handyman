@@ -11,6 +11,7 @@ export function ProfileCard({
   onUploadAvatar,
   ratingLabel,
   ratingStars,
+  verified,
   children,
 }: {
   fullName: string;
@@ -21,6 +22,7 @@ export function ProfileCard({
   onUploadAvatar: (file: File) => Promise<void>;
   ratingLabel?: string;
   ratingStars?: string;
+  verified?: boolean;
   children?: React.ReactNode;
 }) {
   return (
@@ -29,8 +31,21 @@ export function ProfileCard({
         <div className="row" style={{ justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
           <div>
             <div style={{ fontWeight: 800, fontSize: 18 }}>{fullName}</div>
-            <div className="pill" style={{ marginTop: 8 }}>
-              {roleLabel}
+            <div className="row" style={{ flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+              <span className="pill">{roleLabel}</span>
+              {verified ? (
+                <span
+                  className="pill"
+                  style={{
+                    borderColor: 'rgba(0, 230, 118, 0.55)',
+                    color: 'rgba(0, 230, 118, 0.95)',
+                    background: 'rgba(0, 230, 118, 0.08)',
+                  }}
+                  title="Verified"
+                >
+                  Verified
+                </span>
+              ) : null}
             </div>
             {ratingLabel && ratingStars ? (
               <div className="pill" style={{ marginTop: 10 }} title={ratingLabel}>
@@ -90,4 +105,3 @@ export function ProfileCard({
     </div>
   );
 }
-

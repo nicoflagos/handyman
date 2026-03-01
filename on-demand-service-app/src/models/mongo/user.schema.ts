@@ -19,6 +19,8 @@ export type ProviderProfile = {
   idType?: 'nin' | 'voters_card';
   idNumber?: string;
   idImageUrl?: string;
+  verified?: boolean;
+  verifiedAt?: Date;
 };
 
 interface IUserDocument extends Document {
@@ -75,6 +77,8 @@ const UserSchema = new Schema<IUserDocument>({
     idType: { type: String, required: false, enum: ['nin', 'voters_card'] },
     idNumber: { type: String, required: false, trim: true },
     idImageUrl: { type: String, required: false, trim: true },
+    verified: { type: Boolean, default: false },
+    verifiedAt: { type: Date, required: false },
   },
   ratingAsCustomerAvg: { type: Number, default: 0 },
   ratingAsCustomerCount: { type: Number, default: 0 },
