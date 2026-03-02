@@ -35,6 +35,8 @@ function statusLabel(status: OrderStatus) {
       return 'Requested';
     case 'accepted':
       return 'Accepted';
+    case 'arrived':
+      return 'Arrived';
     case 'in_progress':
       return 'In progress';
     case 'completed':
@@ -69,6 +71,7 @@ export default function OrderDetail() {
   const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
   const isCustomer = auth.claims?.role === 'customer';
 
+  const customerUrls = Array.isArray(order?.customerImageUrls) ? order!.customerImageUrls! : [];
   const beforeUrls = Array.isArray(order?.beforeImageUrls) ? order!.beforeImageUrls! : [];
   const afterUrls = Array.isArray(order?.afterImageUrls) ? order!.afterImageUrls! : [];
 
@@ -87,8 +90,14 @@ export default function OrderDetail() {
       });
   }, [id]);
 
-  const chatAvailable = !!order?.providerId && (order?.status === 'accepted' || order?.status === 'in_progress' || order?.status === 'completed' || order?.status === 'canceled');
-  const chatWritable = !!order?.providerId && (order?.status === 'accepted' || order?.status === 'in_progress');
+  const chatAvailable =
+    !!order?.providerId &&
+    (order?.status === 'accepted' ||
+      order?.status === 'arrived' ||
+      order?.status === 'in_progress' ||
+      order?.status === 'completed' ||
+      order?.status === 'canceled');
+  const chatWritable = !!order?.providerId && (order?.status === 'accepted' || order?.status === 'arrived' || order?.status === 'in_progress');
 
   // Chat polling (v1): available after accept, closes on completed/canceled (read-only).
   useEffect(() => {
@@ -299,12 +308,17 @@ export default function OrderDetail() {
                         Accept job
                       </Button>
                     ) : null}
-                    {isProvider && order.status === 'accepted' ? (
+                    {isProvider && (order.status === 'accepted' || order.status === 'arrived') ? (
                       <Button variant="danger" loading={busy} onClick={() => run(() => declineOrder(order._id))}>
                         Decline job
                       </Button>
                     ) : null}
                     {isProvider && order.status === 'accepted' ? (
+                      <Button loading={busy} onClick={() => run(() => setOrderStatus(order._id, 'arrived'))}>
+                        Mark arrived
+                      </Button>
+                    ) : null}
+                    {isProvider && (order.status === 'accepted' || order.status === 'arrived') ? (
                       <Button
                         loading={busy}
                         onClick={startWithProof}
@@ -322,7 +336,7 @@ export default function OrderDetail() {
                         Complete (with after image)
                       </Button>
                     ) : null}
-                    {isCustomer && (order.status === 'requested' || order.status === 'accepted') ? (
+                    {isCustomer && (order.status === 'requested' || order.status === 'accepted' || order.status === 'arrived') ? (
                       <Button variant="danger" loading={busy} onClick={() => run(() => setOrderStatus(order._id, 'canceled'))}>
                         Cancel
                       </Button>
@@ -351,7 +365,7 @@ export default function OrderDetail() {
                   ) : null}
                 </div>
 
-                {isCustomer && (order.status === 'requested' || order.status === 'accepted') && !order.priceConfirmed ? (
+                {isCustomer && (order.status === 'requested' || order.status === 'accepted' || order.status === 'arrived') && !order.priceConfirmed ? (
                   <div style={{ marginTop: 12 }}>
                     <div className="pill" style={{ marginBottom: 10 }}>
                       Edit service fee
@@ -412,11 +426,30 @@ export default function OrderDetail() {
                   </div>
                 ) : null}
 
-                {beforeUrls.length || afterUrls.length ? (
+                {customerUrls.length || beforeUrls.length || afterUrls.length ? (
                   <div style={{ marginTop: 14 }}>
                     <div className="pill" style={{ marginBottom: 10 }}>
                       Job photos
                     </div>
+
+                    {customerUrls.length ? (
+                      <div style={{ marginBottom: 10 }}>
+                        <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                          Customer
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
+                          {customerUrls.slice(0, 8).map((u, idx) => (
+                            <a key={`${u}-${idx}`} href={assetUrl(u)} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                              <img
+                                src={assetUrl(u)}
+                                alt={`Customer ${idx + 1}`}
+                                style={{ width: '100%', height: 86, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(255,255,255,0.14)' }}
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
 
                     {beforeUrls.length ? (
                       <div style={{ marginBottom: 10 }}>
@@ -570,7 +603,7 @@ export default function OrderDetail() {
                   </div>
                 ) : null}
 
-                {isProvider && order.status === 'accepted' ? (
+                {isProvider && (order.status === 'accepted' || order.status === 'arrived') ? (
                   <div style={{ marginTop: 12 }}>
                     {!order.priceConfirmed ? (
                       <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 10 }}>

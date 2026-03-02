@@ -1,6 +1,6 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
-export type OrderStatus = 'requested' | 'accepted' | 'in_progress' | 'completed' | 'canceled';
+export type OrderStatus = 'requested' | 'accepted' | 'arrived' | 'in_progress' | 'completed' | 'canceled';
 
 export type OrderTimelineEvent = {
   status: OrderStatus;
@@ -36,6 +36,7 @@ export interface IOrderDocument extends Document {
   escrowPlatformFee?: number;
   escrowFundedAt?: Date;
   escrowReleasedAt?: Date;
+  customerImageUrls?: string[];
   beforeImageUrls?: string[];
   afterImageUrls?: string[];
   customerRating?: { stars: number; note?: string; at: Date };
@@ -73,6 +74,7 @@ const OrderSchema = new Schema<IOrderDocument>(
     escrowPlatformFee: { type: Number, required: false, min: 0 },
     escrowFundedAt: { type: Date, required: false },
     escrowReleasedAt: { type: Date, required: false },
+    customerImageUrls: { type: [String], default: [] },
     beforeImageUrls: { type: [String], default: [] },
     afterImageUrls: { type: [String], default: [] },
     customerRating: {
@@ -94,7 +96,7 @@ const OrderSchema = new Schema<IOrderDocument>(
     scheduledAt: { type: Date },
     status: {
       type: String,
-      enum: ['requested', 'accepted', 'in_progress', 'completed', 'canceled'],
+      enum: ['requested', 'accepted', 'arrived', 'in_progress', 'completed', 'canceled'],
       default: 'requested',
       index: true,
     },

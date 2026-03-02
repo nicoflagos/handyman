@@ -56,6 +56,9 @@ router.post('/orders/:id/status', authMiddleware, (req, res) => ordersController
 router.post('/orders/:id/rate', authMiddleware, (req, res) => ordersController.rateOrder(req as any, res));
 router.post('/orders/:id/confirm-price', authMiddleware, (req, res) => ordersController.confirmPrice(req as any, res));
 router.put('/orders/:id/price', authMiddleware, (req, res) => ordersController.updateServiceFee(req as any, res));
+router.post('/orders/:id/customer-images', authMiddleware, upload.single('file'), (req, res) =>
+  ordersController.uploadCustomerJobImage(req as any, res),
+);
 router.post('/orders/:id/start', authMiddleware, upload.single('file'), (req, res) => ordersController.startOrder(req as any, res));
 router.post('/orders/:id/complete', authMiddleware, upload.single('file'), (req, res) => ordersController.completeOrder(req as any, res));
 

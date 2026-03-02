@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Layout } from '../components/Layout';
 import { listServices, ServiceItem } from '../services/catalog';
-import { createOrder } from '../services/orders';
+import { createOrder, uploadCustomerJobImage } from '../services/orders';
 import { getMe } from '../services/me';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -22,6 +22,7 @@ export default function CreateOrder() {
   const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
 
   const [serviceKey, setServiceKey] = useState(query.get('service') || 'handyman');
   const [title, setTitle] = useState('');
@@ -30,6 +31,26 @@ export default function CreateOrder() {
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [price, setPrice] = useState('');
+  const [jobImages, setJobImages] = useState<File[]>([]);
+
+  const jobImagePreviews = useMemo(() => jobImages.map(f => URL.createObjectURL(f)), [jobImages]);
+  useEffect(() => {
+    return () => {
+      jobImagePreviews.forEach(u => URL.revokeObjectURL(u));
+    };
+  }, [jobImagePreviews]);
+
+  function onPickJobImages(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    const clean = files.filter(f => f.type.startsWith('image/'));
+    if (clean.length === 0) return;
+    setJobImages(prev => [...prev, ...clean].slice(0, 2));
+  }
+
+  function removeJobImage(idx: number) {
+    setJobImages(prev => prev.filter((_, i) => i !== idx));
+  }
 
   const address = useMemo(() => {
     const parts = [
@@ -62,6 +83,7 @@ export default function CreateOrder() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setCreatedOrderId(null);
     if (!location.state || !location.lga || !location.lc) {
       setError('Please select your State, LGA, and Local Council.');
       return;
@@ -82,7 +104,7 @@ export default function CreateOrder() {
           : scheduledDate
             ? `${scheduledDate}T09:00`
             : undefined;
-      const order = await createOrder({
+      let order = await createOrder({
         serviceKey,
         title: title || `Request: ${serviceKey}`,
         description: description || undefined,
@@ -94,6 +116,11 @@ export default function CreateOrder() {
         price: numericPrice,
         scheduledAt,
       });
+      setCreatedOrderId(order._id);
+
+      for (const file of jobImages) {
+        order = await uploadCustomerJobImage(order._id, file);
+      }
       navigate(`/orders/${order._id}`, { replace: true });
     } catch (err: any) {
       setSubmitState('error');
@@ -194,7 +221,47 @@ export default function CreateOrder() {
                 hint="Optional. If you leave this empty, we’ll default to 09:00."
               />
 
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
+                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)' }}>Job photos (optional)</span>
+                  <span className="muted" style={{ fontSize: 12 }}>
+                    {jobImages.length}/2
+                  </span>
+                </div>
+                <input type="file" accept="image/*" multiple onChange={onPickJobImages} />
+                {jobImagePreviews.length ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+                    {jobImagePreviews.map((u, idx) => (
+                      <div key={u} className="landingCard" style={{ padding: 10 }}>
+                        <img
+                          src={u}
+                          alt={`Job photo ${idx + 1}`}
+                          style={{ width: '100%', height: 130, objectFit: 'cover', borderRadius: 10 }}
+                        />
+                        <div style={{ marginTop: 8 }}>
+                          <Button type="button" variant="ghost" onClick={() => removeJobImage(idx)}>
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="muted" style={{ fontSize: 12 }}>
+                    Upload up to 2 photos to help the handyman understand the job.
+                  </span>
+                )}
+              </div>
+
               {error ? <InlineNotice kind="error">{error}</InlineNotice> : null}
+              {createdOrderId && submitState === 'error' ? (
+                <InlineNotice kind="info">
+                  Order may have been created. You can open it here:{' '}
+                  <Link to={`/orders/${createdOrderId}`} style={{ color: 'inherit' }}>
+                    View order
+                  </Link>
+                </InlineNotice>
+              ) : null}
 
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <Button type="submit" loading={submitState === 'submitting'} disabled={insufficientFunds}>

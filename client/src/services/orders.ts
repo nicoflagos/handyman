@@ -1,6 +1,6 @@
 import { apiClient } from '../apiClient';
 
-export type OrderStatus = 'requested' | 'accepted' | 'in_progress' | 'completed' | 'canceled';
+export type OrderStatus = 'requested' | 'accepted' | 'arrived' | 'in_progress' | 'completed' | 'canceled';
 
 export type OrderTimelineEvent = {
   status: OrderStatus;
@@ -38,6 +38,7 @@ export type Order = {
   lc?: string;
   price: number;
   priceConfirmed?: boolean;
+  customerImageUrls?: string[];
   beforeImageUrls?: string[];
   afterImageUrls?: string[];
   verificationCode?: string;
@@ -160,5 +161,14 @@ export async function completeOrder(orderId: string, input: { completionCode?: s
   if (input.completionCode) form.append('completionCode', input.completionCode);
   form.append('file', input.file);
   const res = await apiClient.post(`/orders/${orderId}/complete`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  return res.data as Order;
+}
+
+export async function uploadCustomerJobImage(orderId: string, file: File): Promise<Order> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await apiClient.post(`/orders/${orderId}/customer-images`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return res.data as Order;
 }

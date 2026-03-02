@@ -426,9 +426,9 @@ export class OrdersController {
 
       const nextStatus = status as OrderStatus;
 
-      const providerAllowed: OrderStatus[] = ['in_progress', 'completed'];
+      const providerAllowed: OrderStatus[] = ['arrived', 'in_progress', 'completed'];
       const customerAllowed: OrderStatus[] = ['canceled'];
-      const adminAllowed: OrderStatus[] = ['requested', 'accepted', 'in_progress', 'completed', 'canceled'];
+      const adminAllowed: OrderStatus[] = ['requested', 'accepted', 'arrived', 'in_progress', 'completed', 'canceled'];
 
       const allowed =
         role === 'admin'
@@ -448,7 +448,7 @@ export class OrdersController {
       // Cancellation rules (customer):
       if (nextStatus === 'canceled' && isCustomer && role !== 'admin') {
         const current = order.status as OrderStatus;
-        if (current !== 'requested' && current !== 'accepted') {
+        if (current !== 'requested' && current !== 'accepted' && current !== 'arrived') {
           return res.status(400).json({ message: 'Order can only be canceled before the job starts' });
         }
         if ((order as any).escrowFundedAt) {
@@ -478,6 +478,30 @@ export class OrdersController {
             .catch(err => console.log(`[push] order canceled -> handyman failed: ${(err as any)?.message || err}`));
         }
       }
+      if (nextStatus === 'arrived') {
+        const orderId = String((updated as any)._id);
+        const title = String((updated as any).title || 'Order');
+        const customerId = (updated as any).customerId as Types.ObjectId | undefined;
+        const providerId = (updated as any).providerId as Types.ObjectId | undefined;
+        if (customerId) {
+          void pushService
+            .notifyUser(customerId, {
+              title: 'Handyman arrived',
+              body: `Handyman arrived for "${title}".`,
+              data: { event: 'order_arrived', orderId },
+            })
+            .catch(err => console.log(`[push] order arrived -> customer failed: ${(err as any)?.message || err}`));
+        }
+        if (providerId) {
+          void pushService
+            .notifyUser(providerId, {
+              title: 'Marked as arrived',
+              body: `You marked "${title}" as arrived.`,
+              data: { event: 'order_arrived', orderId },
+            })
+            .catch(err => console.log(`[push] order arrived -> handyman failed: ${(err as any)?.message || err}`));
+        }
+      }
 
       return res.status(200).json(updated);
     } catch (error) {
@@ -498,7 +522,9 @@ export class OrdersController {
       const isAssignedHandyman = order.providerId?.toString() === req.userId;
       if (!(role === 'admin' || isAssignedHandyman)) return res.status(403).json({ message: 'Forbidden' });
 
-      if (order.status !== 'accepted') return res.status(400).json({ message: 'Only accepted jobs can be declined' });
+      if (order.status !== 'accepted' && order.status !== 'arrived') {
+        return res.status(400).json({ message: 'Only accepted jobs can be declined' });
+      }
       if (order.escrowFundedAt) return res.status(400).json({ message: 'Cannot decline after job has started' });
 
       const prevProviderId = order.providerId;
@@ -590,7 +616,11 @@ export class OrdersController {
     }
   }
 
-  private async saveOrderImage(opts: { orderId: string; kind: 'before' | 'after'; file: { mimetype?: string; buffer?: Buffer } }) {
+  private async saveOrderImage(opts: {
+    orderId: string;
+    kind: 'before' | 'after' | 'customer';
+    file: { mimetype?: string; buffer?: Buffer };
+  }) {
     if (!opts.file?.buffer) throw new Error('file is required');
     if (!opts.file.mimetype || !opts.file.mimetype.startsWith('image/')) throw new Error('Only image uploads are allowed');
 
@@ -618,6 +648,38 @@ export class OrdersController {
     return `/uploads/orders/${opts.orderId}/${opts.kind}/${name}`;
   }
 
+  async uploadCustomerJobImage(req: AuthRequest, res: Response) {
+    try {
+      if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
+      const actorId = new Types.ObjectId(req.userId);
+      const role = await this.userService.getRole(actorId);
+      if (role !== 'customer' && role !== 'admin') return res.status(403).json({ message: 'Only customers can upload job photos' });
+
+      const order: any = await this.orderService.getById(req.params.id);
+      if (!order) return res.status(404).json({ message: 'Order not found' });
+
+      const isCustomer = String(order.customerId) === req.userId;
+      const isAdmin = role === 'admin';
+      if (!(isAdmin || isCustomer)) return res.status(403).json({ message: 'Forbidden' });
+
+      if (order.status === 'in_progress' || order.status === 'completed' || order.status === 'canceled') {
+        return res.status(400).json({ message: 'Job photos can only be uploaded before the job starts' });
+      }
+
+      order.customerImageUrls = Array.isArray(order.customerImageUrls) ? order.customerImageUrls : [];
+      if (order.customerImageUrls.length >= 2) return res.status(400).json({ message: 'You can upload at most 2 job photos' });
+
+      const file = (req as any).file as any;
+      const url = await this.saveOrderImage({ orderId: String(order._id), kind: 'customer', file });
+      order.customerImageUrls.push(url);
+      await order.save();
+
+      return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
+    } catch (error: any) {
+      return res.status(400).json({ message: error?.message || 'Unable to upload job photo' });
+    }
+  }
+
   async confirmPrice(req: AuthRequest, res: Response) {
     try {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
@@ -628,7 +690,9 @@ export class OrdersController {
       const order = await this.orderService.getById(req.params.id);
       if (!order) return res.status(404).json({ message: 'Order not found' });
       if (!order.providerId || order.providerId.toString() !== req.userId) return res.status(403).json({ message: 'Forbidden' });
-      if (order.status !== 'accepted') return res.status(400).json({ message: 'Order must be accepted first' });
+      if (order.status !== 'accepted' && order.status !== 'arrived') {
+        return res.status(400).json({ message: 'Order must be accepted first' });
+      }
 
       (order as any).priceConfirmed = true;
       (order as any).priceConfirmedAt = new Date();
@@ -667,7 +731,7 @@ export class OrdersController {
       const isAdmin = role === 'admin';
       if (!(isAdmin || isCustomer)) return res.status(403).json({ message: 'Forbidden' });
 
-      if (order.status !== 'requested' && order.status !== 'accepted') {
+      if (order.status !== 'requested' && order.status !== 'accepted' && order.status !== 'arrived') {
         return res.status(400).json({ message: 'Service fee can only be edited before the job starts' });
       }
       if (order.priceConfirmed) {
@@ -723,7 +787,9 @@ export class OrdersController {
       const order: any = await this.orderService.getById(req.params.id);
       if (!order) return res.status(404).json({ message: 'Order not found' });
       if (!order.providerId || order.providerId.toString() !== req.userId) return res.status(403).json({ message: 'Forbidden' });
-      if (order.status !== 'accepted') return res.status(400).json({ message: 'Order must be accepted before starting' });
+      if (order.status !== 'accepted' && order.status !== 'arrived') {
+        return res.status(400).json({ message: 'Order must be accepted before starting' });
+      }
       if (!order.priceConfirmed) return res.status(400).json({ message: 'Confirm price before starting' });
 
       const code = String((req.body?.startCode || req.body?.verificationCode || '')).trim();
