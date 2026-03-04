@@ -36,11 +36,10 @@ This Policy applies to Customers, Handymen, and Admin users. It covers personal 
 ### 2.5 Wallet and Transactions
 - Wallet balance
 - Transaction history (inflow/outflow, amounts, references, timestamps)
- - Platform fee records associated with orders and payouts
+- Platform fee records associated with orders and payouts
 
 ### 2.6 Device and Push Notification Data
 - Push notification device tokens (FCM tokens)
-- Notification permission state (inferred from token registration and delivery behavior)
 
 ### 2.7 Media Uploads (Job Photos)
 - Customer job photos (up to 2 per order)
@@ -58,58 +57,37 @@ We process personal data to:
 - Prevent fraud and misuse, investigate abuse, and protect Platform integrity
 - Improve product quality, reliability, and user experience
 
-## 4) Legal Bases (General)
-We process data:
-- to perform the contract created by your use of the Platform (Order facilitation)
-- to comply with legal obligations (where applicable)
-- for legitimate interests (fraud prevention, security, service reliability)
-- based on your consent when you choose to provide optional data (e.g., some profile fields) or enable device notifications
-
-## 5) Sharing of Data
-### 5.1 Sharing Between Customers and Handymen
+## 4) Sharing of Data
+### 4.1 Sharing Between Customers and Handymen
 For a given Order, we share relevant information between the parties to fulfill the job, including:
 - names and profile images
 - job location details
 - job photos (customer job photos; handyman before/after photos)
 - rating and verification badges shown in the UI
 
-### 5.2 Service Providers (Processors)
+### 4.2 Service Providers
 We share data with vendors that help operate the Platform, including:
-- **Cloudinary** (image storage and delivery)
-- **Firebase Cloud Messaging (FCM)** (push delivery using device tokens)
-- **Render** (application hosting)
-- **MongoDB** (database storage)
+- Cloudinary (image storage and delivery)
+- Firebase Cloud Messaging (push delivery using device tokens)
+- Render (application hosting)
+- MongoDB (database storage)
 
-These providers receive only the data required to deliver their services.
-
-### 5.3 Legal and Safety
+### 4.3 Legal and Safety
 We disclose personal data when required by law, legal process, or to protect rights, safety, and security.
 
-## 6) Storage, Retention, and Security
-### 6.1 Storage Locations
-Order/user data is stored in our database. Uploaded images are stored with our media storage provider (Cloudinary) or in our configured uploads storage (depending on environment configuration).
+## 5) Retention and Security
+We retain data for as long as needed to operate the Platform, comply with legal obligations, resolve disputes, and enforce agreements. We use access controls and authentication to restrict data access.
 
-### 6.2 Retention
-We retain data for as long as needed to operate the Platform, comply with legal obligations, resolve disputes, and enforce agreements. Verification images and wallet records are retained for operational and security reasons.
+## 6) Your Choices
+You can update parts of your profile in the Platform. You can enable or disable push notifications in your device settings. You can request account deletion by contacting support (subject to retention requirements).
 
-### 6.3 Security Controls
-We use access controls and authentication to restrict data access. No system is 100% secure; you accept this risk by using the Platform.
+## 7) Children’s Privacy
+The Platform is not intended for individuals under 18.
 
-## 7) Your Choices and Rights
-You can:
-- update parts of your profile in the Platform
-- choose whether to enable push notifications in your device settings
-- request account deletion by contacting support (subject to legal/operational retention needs)
-
-## 8) Children’s Privacy
-The Platform is not intended for individuals under 18. We do not knowingly collect personal data from children.
-
-## 9) International Transfers
-Some service providers process data on servers outside Nigeria. You consent to this processing by using the Platform.
-
-## 10) Changes to This Policy
+## 8) Changes
 We update this Policy and revise the Effective Date. Continued use after the Effective Date constitutes acceptance.
 
-## 11) Contact
+## 9) Contact
 **Support email:** [insert]  
 **Business address:** [insert]
+

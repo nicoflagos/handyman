@@ -15,6 +15,7 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<'customer' | 'provider'>('customer');
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,6 +25,10 @@ export default function Register() {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    if (!acceptedLegal) {
+      setError('Please confirm you have read and agree to the Terms and Privacy Policy.');
+      return;
+    }
     try {
       setLoading(true);
       await register({ firstName, lastName, phone, gender, email, password, role });
@@ -126,10 +131,29 @@ export default function Register() {
                     </span>
                   </label>
                 </div>
+                <label className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
+                  <input
+                    type="checkbox"
+                    checked={acceptedLegal}
+                    onChange={e => setAcceptedLegal(e.target.checked)}
+                    style={{ marginTop: 3 }}
+                  />
+                  <span className="muted" style={{ fontSize: 12, lineHeight: 1.35 }}>
+                    I have read and agree to the{' '}
+                    <Link to="/terms" target="_blank" rel="noreferrer">
+                      Terms &amp; Conditions
+                    </Link>{' '}
+                    and{' '}
+                    <Link to="/privacy" target="_blank" rel="noreferrer">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </span>
+                </label>
                 {error ? <InlineNotice kind="error">{error}</InlineNotice> : null}
                 {success ? <InlineNotice kind="success">{success}</InlineNotice> : null}
                 <div className="row" style={{ justifyContent: 'space-between', marginTop: 4 }}>
-                  <Button type="submit" loading={loading}>
+                  <Button type="submit" loading={loading} disabled={!acceptedLegal}>
                     Register
                   </Button>
                   <span className="muted" style={{ fontSize: 13 }}>

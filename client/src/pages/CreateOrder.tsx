@@ -76,7 +76,7 @@ export default function CreateOrder() {
   }, []);
 
   const numericPrice = Number(price);
-  const platformFee = Number.isFinite(numericPrice) && numericPrice > 0 ? Math.round(numericPrice * 0.1) : 0;
+  const platformFee = Number.isFinite(numericPrice) && numericPrice > 0 ? Math.round(numericPrice * 0.05) : 0;
   const totalDue = Number.isFinite(numericPrice) && numericPrice > 0 ? numericPrice + platformFee : 0;
   const insufficientFunds = walletBalance !== null && totalDue > 0 && walletBalance < totalDue;
 
@@ -93,7 +93,9 @@ export default function CreateOrder() {
       return;
     }
     if (insufficientFunds) {
-      setError(`Insufficient wallet balance. Need ₦${totalDue.toLocaleString()} (₦${numericPrice.toLocaleString()} + ₦${platformFee.toLocaleString()} fee).`);
+      setError(
+        `Insufficient wallet balance. Need \u20A6${totalDue.toLocaleString()} (\u20A6${numericPrice.toLocaleString()} + \u20A6${platformFee.toLocaleString()} platform fee).`,
+      );
       return;
     }
     setSubmitState('submitting');
@@ -202,7 +204,7 @@ export default function CreateOrder() {
                 hint={
                   walletBalance === null
                     ? 'Service fee only (excludes cost of materials).'
-                    : `Wallet: ₦${walletBalance.toLocaleString()}. Total (fee+10%): ₦${totalDue.toLocaleString()}.`
+                    : `Wallet: \u20A6${walletBalance.toLocaleString()}. Total (fee+5%): \u20A6${totalDue.toLocaleString()}.`
                 }
                 error={insufficientFunds ? 'Insufficient wallet balance for this booking.' : null}
               />

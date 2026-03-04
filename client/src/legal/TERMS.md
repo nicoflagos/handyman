@@ -57,7 +57,7 @@ By creating an account, accessing, or using the Platform, you agree to these Ter
 7.3 **Sufficient balance requirement:** The Platform blocks Order creation when the Customer Wallet balance is insufficient to cover the Service Fee plus the Customer Platform Fee.  
 7.4 **Escrow Hold on start:** When the Handyman starts a job, the Platform debits the Customer Wallet for the Service Fee plus the Customer Platform Fee and holds the funds as an Escrow Hold.  
 7.5 **Release on completion:** When the Handyman completes a job, the Platform releases funds to the Handyman Wallet by paying the Service Fee minus the Handyman Platform Fee and records the transaction(s) in the transaction history shown in the Platform.  
-7.5 **No banking relationship:** The Wallet is not a bank account and does not create a banking relationship.
+7.6 **No banking relationship:** The Wallet is not a bank account and does not create a banking relationship.
 
 ## 8) Cancellations and Declines
 8.1 **Customer cancellation:** The Customer can cancel an Order only while it is `requested`, `accepted`, or `arrived`, and only before Escrow Hold funding.  
@@ -108,10 +108,10 @@ To the maximum extent permitted by law:
 You agree to indemnify and hold Handyman harmless from claims, damages, liabilities, losses, and expenses arising from your use of the Platform, your violation of these Terms, or your interactions with other users.
 
 ## 17) Privacy
-Your use of the Platform is subject to the Privacy Policy in `PRIVACY.md`. If these Terms conflict with the Privacy Policy regarding personal data, the Privacy Policy controls.
+Your use of the Platform is subject to the Privacy Policy.
 
 ## 18) Changes to the Terms
-We can update these Terms. We post the updated Terms and the updated Effective Date. Continued use of the Platform after the Effective Date of the updated Terms constitutes acceptance.
+We update these Terms and revise the Effective Date. Continued use of the Platform after the Effective Date constitutes acceptance.
 
 ## 19) Suspension and Termination
 Handyman can suspend or terminate accounts that violate these Terms, create risk to other users, or threaten Platform integrity.
@@ -122,3 +122,4 @@ These Terms are governed by the laws of the Federal Republic of Nigeria. Venue f
 ## 21) Contact
 **Support email:** [insert]  
 **Business address:** [insert]
+

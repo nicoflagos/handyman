@@ -11,6 +11,8 @@ import CreateOrder from './pages/CreateOrder';
 import OrderDetail from './pages/OrderDetail';
 import Admin from './pages/Admin';
 import ProviderSettings from './pages/ProviderSettings';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
@@ -57,6 +59,8 @@ export default function App() {
           />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route
             path="/dashboard"
             element={

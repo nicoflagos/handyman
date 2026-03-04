@@ -156,8 +156,8 @@ export class OrdersController {
         parsedScheduledAt = d;
       }
 
-      // Ensure customer can afford job fee + 10% platform fee (commission).
-      const platformFee = Math.round(nPrice * 0.1);
+      // Ensure customer can afford job fee + 5% platform fee (commission).
+      const platformFee = Math.round(nPrice * 0.05);
       const total = nPrice + platformFee;
       const customer: any = await this.userService.getById(req.userId);
       if (!customer) return res.status(400).json({ message: 'Customer not found' });
@@ -166,9 +166,9 @@ export class OrdersController {
         await customer.save();
       }
       if (customer.walletBalance < total) {
-        return res
-          .status(400)
-          .json({ message: `Insufficient wallet balance. Need ₦${total} (₦${nPrice} + ₦${platformFee} fee).` });
+        return res.status(400).json({
+          message: `Insufficient wallet balance. Need \u20A6${total.toLocaleString('en-NG')} (\u20A6${nPrice.toLocaleString('en-NG')} + \u20A6${platformFee.toLocaleString('en-NG')} platform fee).`,
+        });
       }
 
       const customerId = new Types.ObjectId(req.userId);
@@ -742,16 +742,16 @@ export class OrdersController {
       const nPrice = Number(price);
       if (!Number.isFinite(nPrice) || nPrice <= 0) return res.status(400).json({ message: 'price must be a positive number' });
 
-      // Ensure customer can afford job fee + 10% platform fee (commission).
-      const platformFee = Math.round(nPrice * 0.1);
+      // Ensure customer can afford job fee + 5% platform fee (commission).
+      const platformFee = Math.round(nPrice * 0.05);
       const total = nPrice + platformFee;
       const customer: any = await this.userService.getById(String(order.customerId));
       if (!customer) return res.status(400).json({ message: 'Customer not found' });
       if (typeof customer.walletBalance !== 'number') customer.walletBalance = 100000;
       if (customer.walletBalance < total) {
-        return res
-          .status(400)
-          .json({ message: `Insufficient wallet balance. Need ₦${total} (₦${nPrice} + ₦${platformFee} fee).` });
+        return res.status(400).json({
+          message: `Insufficient wallet balance. Need \u20A6${total.toLocaleString('en-NG')} (\u20A6${nPrice.toLocaleString('en-NG')} + \u20A6${platformFee.toLocaleString('en-NG')} platform fee).`,
+        });
       }
 
       order.price = nPrice;
@@ -806,11 +806,11 @@ export class OrdersController {
       order.beforeImageUrls = Array.isArray(order.beforeImageUrls) ? order.beforeImageUrls : [];
       order.beforeImageUrls.push(url);
 
-      // Fund escrow: customer pays job fee + 10% platform fee, held until completion.
+      // Fund escrow: customer pays job fee + 5% platform fee, held until completion.
       if (!order.escrowFundedAt) {
         const jobFee = Number(order.price || 0);
         if (!Number.isFinite(jobFee) || jobFee <= 0) return res.status(400).json({ message: 'Order price is invalid' });
-        const platformFee = Math.round(jobFee * 0.1);
+        const platformFee = Math.round(jobFee * 0.05);
         const total = jobFee + platformFee;
 
         const customer: any = await this.userService.getById(String(order.customerId));
@@ -856,7 +856,7 @@ export class OrdersController {
       const orderId = String(order._id);
       const title = String(order.title || 'Order');
       const jobFee = Number(order.escrowJobAmount || order.price || 0);
-      const platformFee = Number(order.escrowPlatformFee || Math.round(jobFee * 0.1));
+      const platformFee = Number(order.escrowPlatformFee || Math.round(jobFee * 0.05));
       const total = jobFee + platformFee;
       const fmt = (n: number) => `₦${Math.round(n).toLocaleString('en-NG')}`;
 
@@ -915,7 +915,7 @@ export class OrdersController {
       const jobFee = Number(order.escrowJobAmount || order.price || 0);
       if (!Number.isFinite(jobFee) || jobFee <= 0) return res.status(400).json({ message: 'Order price is invalid' });
 
-      const commission = Math.round(jobFee * 0.1);
+      const commission = Math.round(jobFee * 0.05);
       const payout = jobFee - commission;
       if (payout < 0) return res.status(400).json({ message: 'Order payout is invalid' });
 

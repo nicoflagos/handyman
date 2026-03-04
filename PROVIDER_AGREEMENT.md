@@ -47,7 +47,7 @@ This Provider Agreement (the “Agreement”) applies to users who register as *
 ## 9) Payments, Wallet, and Payouts
 9.1 Payouts occur through the Platform Wallet according to the Platform’s escrow hold/release rules.  
 9.2 You do not request Customers to bypass Platform payment flows.  
-9.3 You accept that Platform Fees apply as disclosed in the Platform.
+9.3 You accept that the Platform charges a Platform Fee equal to **5% of the Service Fee** to the Handyman (deducted from payout) as disclosed in the Platform.
 
 ## 10) Cancellations and Declines
 10.1 You can decline a job only when the Platform allows it (before start and escrow funding).  
@@ -62,4 +62,3 @@ Handyman enforces this Agreement using Platform controls and can suspend or term
 
 ## 13) Contact
 **Support email:** [insert]
-
