@@ -68,6 +68,7 @@ router.post('/orders/:id/complete', authMiddleware, upload.single('file'), (req,
 // Admin (role-protected in controller)
 router.get('/admin/users', authMiddleware, (req, res) => adminController.listUsers(req as any, res));
 router.get('/admin/users/:id/id-image', authMiddleware, (req, res) => adminController.getProviderIdImage(req as any, res));
+router.get('/admin/users/:id/passport-photo', authMiddleware, (req, res) => adminController.getProviderPassportPhoto(req as any, res));
 router.get('/admin/orders', authMiddleware, (req, res) => adminController.listOrders(req as any, res));
 router.get('/admin/transactions', authMiddleware, (req, res) => adminController.listTransactions(req as any, res));
 

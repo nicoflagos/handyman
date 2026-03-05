@@ -16,6 +16,15 @@ export type AdminUser = {
   providerProfile?: {
     verified?: boolean;
     verifiedAt?: string;
+    country?: string;
+    state?: string;
+    lga?: string;
+    lc?: string;
+    skills?: string[];
+    available?: boolean;
+    availabilityNote?: string;
+    address?: string;
+    passportPhotoUrl?: string;
     idType?: string;
     idNumber?: string;
     idImageUrl?: string;
@@ -47,3 +56,7 @@ export async function adminGetProviderIdImageUrl(userId: string): Promise<string
   return String((res.data as any)?.url || '');
 }
 
+export async function adminGetProviderPassportPhotoUrl(userId: string): Promise<string> {
+  const res = await apiClient.get(`/admin/users/${userId}/passport-photo`);
+  return String((res.data as any)?.url || '');
+}

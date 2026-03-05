@@ -5,7 +5,14 @@ import { Button } from '../ui/Button';
 import { InlineNotice } from '../ui/Toast';
 import { assetUrl } from '../lib/assetUrl';
 import { Order } from '../services/orders';
-import { adminGetProviderIdImageUrl, adminListOrders, adminListTransactions, adminListUsers, AdminUser } from '../services/admin';
+import {
+  adminGetProviderIdImageUrl,
+  adminGetProviderPassportPhotoUrl,
+  adminListOrders,
+  adminListTransactions,
+  adminListUsers,
+  AdminUser,
+} from '../services/admin';
 
 export default function Admin() {
   const [tab, setTab] = React.useState<'orders' | 'users' | 'transactions'>('orders');
@@ -18,6 +25,7 @@ export default function Admin() {
   const [usersState, setUsersState] = React.useState<'loading' | 'ready' | 'error'>('loading');
   const [userQuery, setUserQuery] = React.useState('');
   const [userRole, setUserRole] = React.useState('');
+  const [expandedUserId, setExpandedUserId] = React.useState<string | null>(null);
 
   const [transactions, setTransactions] = React.useState<any[]>([]);
   const [txState, setTxState] = React.useState<'loading' | 'ready' | 'error'>('loading');
@@ -226,9 +234,16 @@ export default function Admin() {
                   const verified = !!u.providerProfile?.verified;
                   const workCount = Array.isArray(u.providerProfile?.workImageUrls) ? u.providerProfile!.workImageUrls!.length : 0;
                   const hasIdImage = !!String(u.providerProfile?.idImageUrl || '').trim();
+                  const hasPassport = !!String(u.providerProfile?.passportPhotoUrl || '').trim();
+                  const expanded = expandedUserId === u._id;
+                  const skills = Array.isArray(u.providerProfile?.skills) ? (u.providerProfile?.skills as string[]) : [];
 
                   async function openIdImage() {
                     const url = await adminGetProviderIdImageUrl(u._id);
+                    if (url) window.open(assetUrl(url), '_blank', 'noreferrer');
+                  }
+                  async function openPassportPhoto() {
+                    const url = await adminGetProviderPassportPhotoUrl(u._id);
                     if (url) window.open(assetUrl(url), '_blank', 'noreferrer');
                   }
 
@@ -257,9 +272,17 @@ export default function Admin() {
                           {isHandyman && verified ? <span className="pill">Verified</span> : null}
                         </div>
                         <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                          <Button variant="ghost" onClick={() => setExpandedUserId(expanded ? null : u._id)}>
+                            {expanded ? 'Hide' : 'View'}
+                          </Button>
                           {isHandyman && hasIdImage ? (
                             <Button variant="ghost" onClick={openIdImage}>
                               View ID image
+                            </Button>
+                          ) : null}
+                          {isHandyman && hasPassport ? (
+                            <Button variant="ghost" onClick={openPassportPhoto}>
+                              View passport
                             </Button>
                           ) : null}
                         </div>
@@ -270,6 +293,63 @@ export default function Admin() {
                       <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
                         {u._id}
                       </div>
+
+                      {expanded ? (
+                        <div style={{ marginTop: 10 }}>
+                          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                            <span className="pill" title="Wallet balance">
+                              Wallet: ₦{Number(u.walletBalance || 0).toLocaleString()}
+                            </span>
+                            {u.gender ? <span className="pill">Gender: {u.gender}</span> : null}
+                          </div>
+
+                          {isHandyman ? (
+                            <div style={{ marginTop: 10 }} className="col">
+                              <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                                {u.providerProfile?.state ? <span className="pill">State: {u.providerProfile.state}</span> : null}
+                                {u.providerProfile?.lga ? <span className="pill">LGA: {u.providerProfile.lga}</span> : null}
+                                {u.providerProfile?.lc ? <span className="pill">LC: {u.providerProfile.lc}</span> : null}
+                              </div>
+                              {u.providerProfile?.address ? (
+                                <div className="muted" style={{ fontSize: 13, marginTop: 8 }}>
+                                  Address: {u.providerProfile.address}
+                                </div>
+                              ) : null}
+
+                              <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+                                <span className="pill">Availability: {u.providerProfile?.available ? 'On' : 'Off'}</span>
+                                {u.providerProfile?.availabilityNote ? (
+                                  <span className="pill">Note: {u.providerProfile.availabilityNote}</span>
+                                ) : null}
+                              </div>
+
+                              <div className="row" style={{ gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+                                {u.providerProfile?.idType ? <span className="pill">ID type: {u.providerProfile.idType}</span> : null}
+                                {u.providerProfile?.idNumber ? <span className="pill">ID number: {u.providerProfile.idNumber}</span> : null}
+                              </div>
+
+                              {skills.length ? (
+                                <div style={{ marginTop: 10 }}>
+                                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                                    Skills
+                                  </div>
+                                  <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+                                    {skills.map(s => (
+                                      <span key={s} className="pill">
+                                        {s}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="muted" style={{ fontSize: 13, marginTop: 10 }}>
+                                  Skills: —
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })}
@@ -344,4 +424,3 @@ export default function Admin() {
     </Layout>
   );
 }
-

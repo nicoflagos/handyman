@@ -1,6 +1,6 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
-export type AuditAction = 'VIEW_PROVIDER_ID_IMAGE';
+export type AuditAction = 'VIEW_PROVIDER_ID_IMAGE' | 'VIEW_PROVIDER_PASSPORT_PHOTO';
 
 export interface IAuditLogDocument extends Document {
   actorId: Types.ObjectId;
@@ -24,4 +24,3 @@ const AuditLogSchema = new Schema<IAuditLogDocument>(
 );
 
 export const AuditLog = model<IAuditLogDocument>('AuditLog', AuditLogSchema);
-

@@ -40,7 +40,7 @@ export class AdminController {
 
       const users = await User.find(query)
         .select(
-          '_id username firstName lastName email phone gender role avatarUrl walletBalance createdAt updatedAt providerProfile.verified providerProfile.verifiedAt providerProfile.idType providerProfile.idNumber providerProfile.idImageUrl providerProfile.workImageUrls',
+          '_id username firstName lastName email phone gender role avatarUrl walletBalance createdAt updatedAt providerProfile.country providerProfile.state providerProfile.lga providerProfile.lc providerProfile.skills providerProfile.available providerProfile.availabilityNote providerProfile.workImageUrls providerProfile.address providerProfile.passportPhotoUrl providerProfile.idType providerProfile.idNumber providerProfile.idImageUrl providerProfile.verified providerProfile.verifiedAt',
         )
         .sort({ createdAt: -1 })
         .limit(limit)
@@ -124,5 +124,33 @@ export class AdminController {
       return res.status(500).json({ message: msg });
     }
   }
-}
 
+  async getProviderPassportPhoto(req: AuthRequest, res: Response) {
+    try {
+      const actorId = await this.requireAdmin(req);
+      const userId = String(req.params.id || '').trim();
+      if (!Types.ObjectId.isValid(userId)) return res.status(400).json({ message: 'User id is invalid' });
+
+      const user: any = await User.findById(userId).select('_id providerProfile.passportPhotoUrl').exec();
+      const url = String(user?.providerProfile?.passportPhotoUrl || '').trim();
+      if (!url) return res.status(404).json({ message: 'No passport photo found' });
+
+      await AuditLog.create([
+        {
+          actorId,
+          action: 'VIEW_PROVIDER_PASSPORT_PHOTO',
+          targetType: 'User',
+          targetId: new Types.ObjectId(userId),
+          meta: { url },
+        },
+      ]);
+
+      return res.status(200).json({ url });
+    } catch (err: any) {
+      const msg = err?.message || 'Error';
+      if (msg === 'Unauthorized') return res.status(401).json({ message: 'Unauthorized' });
+      if (msg === 'Forbidden') return res.status(403).json({ message: 'Forbidden' });
+      return res.status(500).json({ message: msg });
+    }
+  }
+}
