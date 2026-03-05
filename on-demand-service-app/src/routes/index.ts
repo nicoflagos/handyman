@@ -3,6 +3,7 @@ import { AuthController } from '../controllers/auth.controller';
 import { UserController } from '../controllers/user.controller';
 import { OrdersController } from '../controllers/orders.controller';
 import { ServicesController } from '../controllers/services.controller';
+import { AdminController } from '../controllers/admin.controller';
 import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
 import { OrderService } from '../services/order.service';
@@ -12,9 +13,11 @@ import multer from 'multer';
 const router = Router();
 
 const authController = new AuthController(new AuthService());
-const userController = new UserController(new UserService());
+const userService = new UserService();
+const userController = new UserController(userService);
 const servicesController = new ServicesController();
-const ordersController = new OrdersController(new OrderService(), new UserService());
+const ordersController = new OrdersController(new OrderService(), userService);
+const adminController = new AdminController(userService);
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
 
@@ -61,6 +64,12 @@ router.post('/orders/:id/customer-images', authMiddleware, upload.single('file')
 );
 router.post('/orders/:id/start', authMiddleware, upload.single('file'), (req, res) => ordersController.startOrder(req as any, res));
 router.post('/orders/:id/complete', authMiddleware, upload.single('file'), (req, res) => ordersController.completeOrder(req as any, res));
+
+// Admin (role-protected in controller)
+router.get('/admin/users', authMiddleware, (req, res) => adminController.listUsers(req as any, res));
+router.get('/admin/users/:id/id-image', authMiddleware, (req, res) => adminController.getProviderIdImage(req as any, res));
+router.get('/admin/orders', authMiddleware, (req, res) => adminController.listOrders(req as any, res));
+router.get('/admin/transactions', authMiddleware, (req, res) => adminController.listTransactions(req as any, res));
 
 export function setRoutes(app: Express) {
   app.use('/api', router);
