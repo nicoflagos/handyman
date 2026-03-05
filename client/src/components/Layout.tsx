@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../ui/Button';
 
@@ -25,6 +25,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
   const isAdmin = auth.claims?.role === 'admin';
   const isProvider = auth.claims?.role === 'provider';
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const canGoBack = typeof window !== 'undefined' && window.history.length > 1 && location.pathname !== '/';
 
   return (
     <>
@@ -41,6 +45,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="container" style={{ paddingTop: 16, paddingBottom: 16 }}>
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <div className="row" style={{ gap: 10 }}>
+              {canGoBack ? (
+                <Button variant="ghost" onClick={() => navigate(-1)} title="Back">
+                  Back
+                </Button>
+              ) : null}
               <Link to="/" style={{ fontWeight: 800, letterSpacing: 0.2, textDecoration: 'none' }}>
                 Handyman
               </Link>

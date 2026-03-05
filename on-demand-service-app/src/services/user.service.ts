@@ -2,6 +2,10 @@ import { Types } from 'mongoose';
 import { User } from '../models/mongo/user.schema';
 
 export class UserService {
+  private escapeRegExp(value: string) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   async getById(userId: string) {
     if (!Types.ObjectId.isValid(userId)) return null;
     return User.findById(userId).select('-password').exec();
@@ -91,7 +95,17 @@ export class UserService {
     if (typeof input.available === 'boolean') update['providerProfile.available'] = input.available;
     if (typeof input.availabilityNote === 'string') update['providerProfile.availabilityNote'] = input.availabilityNote;
     if (Array.isArray(input.workImageUrls)) update['providerProfile.workImageUrls'] = input.workImageUrls;
-    if (typeof input.address === 'string') update['providerProfile.address'] = input.address.trim();
+    if (typeof input.address === 'string') {
+      const cleanAddress = input.address.trim();
+      if (cleanAddress) {
+        const addressRegex = new RegExp(`^${this.escapeRegExp(cleanAddress)}$`, 'i');
+        const existing = await User.findOne({ _id: { $ne: userId }, 'providerProfile.address': addressRegex })
+          .select('_id')
+          .exec();
+        if (existing) throw new Error('Address already in use');
+      }
+      update['providerProfile.address'] = cleanAddress;
+    }
 
     if (typeof input.idType === 'string') {
       if (input.idType !== 'nin' && input.idType !== 'voters_card') throw new Error('Invalid idType');
@@ -103,9 +117,16 @@ export class UserService {
         const current = await User.findById(userId).select('providerProfile.idType').exec();
         idType = (current as any)?.providerProfile?.idType as any;
       }
-      const cleaned = input.idNumber.trim().replace(/[\s-]/g, '');
+      let cleaned = input.idNumber.trim().replace(/[\s-]/g, '');
       if (idType === 'nin' && !/^\d{11}$/.test(cleaned)) throw new Error('NIN must be exactly 11 digits');
       if (idType === 'voters_card' && !/^[A-Z0-9]{19}$/i.test(cleaned)) throw new Error('Voters Card must be exactly 19 characters');
+      if (idType === 'voters_card') cleaned = cleaned.toUpperCase();
+      if (cleaned) {
+        const existing = await User.findOne({ _id: { $ne: userId }, 'providerProfile.idNumber': cleaned })
+          .select('_id')
+          .exec();
+        if (existing) throw new Error('ID number already in use');
+      }
       update['providerProfile.idNumber'] = cleaned;
     }
     return User.findByIdAndUpdate(userId, { $set: update }, { new: true }).select('-password').exec();

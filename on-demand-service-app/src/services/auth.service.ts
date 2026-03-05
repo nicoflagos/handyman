@@ -53,14 +53,24 @@ export class AuthService {
         const normalizedEmail = email.trim().toLowerCase();
         const normalizedUsername = (username || normalizedEmail.split('@')[0]).trim();
         const normalizedRole: 'customer' | 'provider' = role === 'provider' ? 'provider' : 'customer';
+        const normalizedPhone = typeof phone === 'string' ? phone.trim().replace(/[\s-]/g, '') : '';
 
         const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const emailRegex = new RegExp(`^${escapeRegExp(normalizedEmail)}$`, 'i');
 
+        const phoneRegex = normalizedPhone ? new RegExp(`^${escapeRegExp(normalizedPhone)}$`) : null;
+
         const existingUser = await User.findOne({
-            $or: [{ email: emailRegex }, { username: normalizedUsername }],
+            $or: [
+                { email: emailRegex },
+                { username: normalizedUsername },
+                ...(phoneRegex ? [{ phone: phoneRegex }] : []),
+            ],
         }).exec();
         if (existingUser) {
+            if (phoneRegex && phoneRegex.test(String((existingUser as any).phone || ''))) {
+                throw new Error('Phone number already in use');
+            }
             throw new Error('User already exists');
         }
 
@@ -71,7 +81,7 @@ export class AuthService {
             role: normalizedRole,
             firstName: typeof firstName === 'string' ? firstName.trim() : undefined,
             lastName: typeof lastName === 'string' ? lastName.trim() : undefined,
-            phone: typeof phone === 'string' ? phone.trim() : undefined,
+            phone: normalizedPhone || undefined,
             gender,
             // Email verification disabled for now.
             emailVerified: true,
