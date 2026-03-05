@@ -22,6 +22,7 @@ jobs:
         working-directory: client
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -30,7 +31,7 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
-          VITE_BASE: /handyman/
+          VITE_BASE: /${{ github.event.repository.name }}/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: client/dist
@@ -44,4 +45,3 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
-
