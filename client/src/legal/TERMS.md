@@ -1,10 +1,10 @@
-# Handyman — Terms & Conditions
+# Handyman - Terms & Conditions
 
 **Effective Date:** 2026-03-04  
-**Operator:** Handyman (“Handyman”, “we”, “us”, “our”)  
-**Platform:** Handyman web app and mobile app (including Android WebView wrapper) (the “Platform”)
+**Operator:** Handyman ("Handyman", "we", "us", "our")  
+**Platform:** Handyman web app and mobile app (including Android WebView wrapper) (the "Platform")
 
-By creating an account, accessing, or using the Platform, you agree to these Terms & Conditions (“Terms”). If you do not agree, do not use the Platform.
+By creating an account, accessing, or using the Platform, you agree to these Terms & Conditions ("Terms"). If you do not agree, do not use the Platform.
 
 ## 1) Definitions
 - **Customer:** A user who requests a service.
@@ -52,7 +52,7 @@ By creating an account, accessing, or using the Platform, you agree to these Ter
 6.3 The assigned Handyman can view the Customer job photos for that Order.
 
 ## 7) Wallet, Platform Fee, and Escrow Hold
-7.1 **Wallet:** The Platform displays each user’s Wallet balance.  
+7.1 **Wallet:** The Platform displays each user's Wallet balance.  
 7.2 **Platform fees (5% each side):** The Platform charges a Platform Fee equal to **5% of the Service Fee** to the Customer and a Platform Fee equal to **5% of the Service Fee** to the Handyman (deducted from the Handyman payout).  
 7.3 **Sufficient balance requirement:** The Platform blocks Order creation when the Customer Wallet balance is insufficient to cover the Service Fee plus the Customer Platform Fee.  
 7.4 **Escrow Hold on start:** When the Handyman starts a job, the Platform debits the Customer Wallet for the Service Fee plus the Customer Platform Fee and holds the funds as an Escrow Hold.  
@@ -69,7 +69,7 @@ By creating an account, accessing, or using the Platform, you agree to these Ter
 9.2 Ratings are one-time per side per Order and become part of aggregate rating displays.
 
 ## 10) Verification Badge (Handyman)
-10.1 The Platform displays a “Verified” badge for a Handyman when the Handyman profile includes:
+10.1 The Platform displays a "Verified" badge for a Handyman when the Handyman profile includes:
 - address, and
 - ID type, and
 - a valid ID number for the selected ID type, and
@@ -94,7 +94,7 @@ You must not:
 - scrape, reverse engineer, or interfere with Platform security
 
 ## 14) Disclaimers
-14.1 The Platform is provided “as is” and “as available.”  
+14.1 The Platform is provided "as is" and "as available."  
 14.2 Handyman does not guarantee that any Order is accepted, completed, or completed to a specific standard.  
 14.3 Offline interactions occur outside our control. Users are responsible for their own safety and conduct.
 
@@ -102,7 +102,7 @@ You must not:
 To the maximum extent permitted by law:
 15.1 Handyman is not liable for indirect, incidental, special, consequential, or punitive damages.  
 15.2 Handyman is not liable for the acts or omissions of Customers or Handymen, including service performance.  
-15.3 Handyman’s total liability for any claim related to the Platform is limited to the total Platform Fees paid by the user in the three (3) months before the event giving rise to the claim, unless applicable law requires a different limit.
+15.3 Handyman's total liability for any claim related to the Platform is limited to the total Platform Fees paid by the user in the three (3) months before the event giving rise to the claim, unless applicable law requires a different limit.
 
 ## 16) Indemnity
 You agree to indemnify and hold Handyman harmless from claims, damages, liabilities, losses, and expenses arising from your use of the Platform, your violation of these Terms, or your interactions with other users.
@@ -122,4 +122,3 @@ These Terms are governed by the laws of the Federal Republic of Nigeria. Venue f
 ## 21) Contact
 **Support email:** [insert]  
 **Business address:** [insert]
-

@@ -1,7 +1,7 @@
-# Handyman — Provider (Handyman) Agreement
+# Handyman - Provider (Handyman) Agreement
 
 **Effective Date:** 2026-03-04  
-This Provider Agreement (the “Agreement”) applies to users who register as **Handymen** on the Handyman Platform. By accepting this Agreement, you agree to comply with it in addition to `TERMS.md` and `PRIVACY.md`.
+This Provider Agreement (the "Agreement") applies to users who register as **Handymen** on the Handyman Platform. By accepting this Agreement, you agree to comply with it in addition to `TERMS.md` and `PRIVACY.md`.
 
 ## 1) Independent Contractor
 1.1 You provide services as an independent contractor.  
@@ -12,7 +12,7 @@ This Provider Agreement (the “Agreement”) applies to users who register as *
 2.2 You keep your profile information up to date, including service areas and availability.
 
 ## 3) Verification Requirements
-3.1 To earn a “Verified” badge you must complete all required verification steps in the Platform, including:
+3.1 To earn a "Verified" badge you must complete all required verification steps in the Platform, including:
 - address
 - ID type
 - valid ID number
@@ -45,7 +45,7 @@ This Provider Agreement (the “Agreement”) applies to users who register as *
 8.4 You do not share Start/Completion Codes with anyone else.
 
 ## 9) Payments, Wallet, and Payouts
-9.1 Payouts occur through the Platform Wallet according to the Platform’s escrow hold/release rules.  
+9.1 Payouts occur through the Platform Wallet according to the Platform's escrow hold/release rules.  
 9.2 You do not request Customers to bypass Platform payment flows.  
 9.3 You accept that the Platform charges a Platform Fee equal to **5% of the Service Fee** to the Handyman (deducted from payout) as disclosed in the Platform.
 

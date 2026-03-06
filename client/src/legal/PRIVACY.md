@@ -1,7 +1,7 @@
-# Handyman — Privacy Policy
+# Handyman - Privacy Policy
 
 **Effective Date:** 2026-03-04  
-**Operator:** Handyman (“Handyman”, “we”, “us”, “our”)  
+**Operator:** Handyman ("Handyman", "we", "us", "our")  
 **Platform:** Handyman web app and mobile app (including Android WebView wrapper)
 
 This Privacy Policy explains how we collect, use, share, and protect personal data when you use the Platform.
@@ -81,7 +81,7 @@ We retain data for as long as needed to operate the Platform, comply with legal 
 ## 6) Your Choices
 You can update parts of your profile in the Platform. You can enable or disable push notifications in your device settings. You can request account deletion by contacting support (subject to retention requirements).
 
-## 7) Children’s Privacy
+## 7) Children's Privacy
 The Platform is not intended for individuals under 18.
 
 ## 8) Changes
@@ -90,4 +90,3 @@ We update this Policy and revise the Effective Date. Continued use after the Eff
 ## 9) Contact
 **Support email:** [insert]  
 **Business address:** [insert]
-
