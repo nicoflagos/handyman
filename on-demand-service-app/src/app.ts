@@ -11,9 +11,41 @@ const app = express();
 const PORT = config.port || 3000;
 const SKIP_DB = process.env.SKIP_DB === 'true';
 
+function parseCorsOrigins() {
+    const raw = String(process.env.CORS_ORIGINS || '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+    // Safe defaults for local dev + GitHub Pages.
+    if (raw.length > 0) return raw;
+
+    return [
+        'http://localhost:5173',
+        'http://localhost:4173',
+        'https://nicoflagos.github.io',
+    ];
+}
+
+const corsOrigins = new Set(parseCorsOrigins());
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// CORS (needed for GitHub Pages -> Render API calls)
+app.use((req, res, next) => {
+    const origin = String(req.headers.origin || '');
+    if (origin && corsOrigins.has(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    }
+
+    if (req.method === 'OPTIONS') return res.status(204).end();
+    return next();
+});
 
 // Serve uploaded files (e.g. profile pictures)
 app.use('/uploads', express.static(getUploadsRootDir()));

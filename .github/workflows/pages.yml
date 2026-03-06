@@ -32,6 +32,8 @@ jobs:
       - run: npm run build
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
+          # GitHub Pages is a separate domain from the API, so we must point the SPA to Render.
+          VITE_API_URL: https://handyman-full.onrender.com
       - run: touch dist/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
