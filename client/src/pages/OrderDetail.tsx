@@ -68,8 +68,9 @@ export default function OrderDetail() {
   const [chatText, setChatText] = useState('');
   const [chatBusy, setChatBusy] = useState(false);
 
-  const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
-  const isCustomer = auth.claims?.role === 'customer';
+  const role = auth.me?.role || auth.claims?.role;
+  const isProvider = role === 'provider' || role === 'admin';
+  const isCustomer = role === 'customer';
 
   const customerUrls = Array.isArray(order?.customerImageUrls) ? order!.customerImageUrls! : [];
   const beforeUrls = Array.isArray(order?.beforeImageUrls) ? order!.beforeImageUrls! : [];
@@ -779,7 +780,8 @@ export default function OrderDetail() {
                         {messages.length === 0 && chatState !== 'loading' ? <div className="muted">No messages yet.</div> : null}
                         <div className="col" style={{ gap: 8 }}>
                           {messages.map(m => {
-                            const mine = auth.claims?.userId ? m.fromUserId === auth.claims.userId : false;
+                            const myId = auth.me?._id || auth.claims?.userId;
+                            const mine = myId ? m.fromUserId === myId : false;
                             return (
                               <div
                                 key={m._id}

@@ -1,4 +1,6 @@
 import { AuthService } from '../services/auth.service';
+import jwt from 'jsonwebtoken';
+import config from '../config';
 
 export class AuthController {
     constructor(private authService: AuthService) {}
@@ -34,9 +36,42 @@ export class AuthController {
                 return res.status(400).json({ message: 'Email and password required' });
             }
             const token = await this.authService.login(email, password);
-            res.status(200).json({ token });
+            const decoded: any = jwt.decode(token);
+            const maxAge = decoded?.exp ? Math.max(Number(decoded.exp) * 1000 - Date.now(), 0) : undefined;
+
+            // HttpOnly cookie auth (recommended). Token is also returned for backward compatibility.
+            res.cookie(config.authCookieName, token, {
+                httpOnly: true,
+                secure:
+                    String(process.env.NODE_ENV || '').toLowerCase() === 'production' ||
+                    config.authCookieSameSite === 'none',
+                sameSite: config.authCookieSameSite,
+                domain: config.authCookieDomain,
+                path: '/',
+                ...(typeof maxAge === 'number' ? { maxAge } : {}),
+            });
+
+            res.status(200).json({ token, expiresIn: config.jwtExpiresIn });
         } catch (error: any) {
             res.status(401).json({ message: error.message });
+        }
+    }
+
+    async logout(_req: any, res: any) {
+        try {
+            res.cookie(config.authCookieName, '', {
+                httpOnly: true,
+                secure:
+                    String(process.env.NODE_ENV || '').toLowerCase() === 'production' ||
+                    config.authCookieSameSite === 'none',
+                sameSite: config.authCookieSameSite,
+                domain: config.authCookieDomain,
+                path: '/',
+                maxAge: 0,
+            });
+            return res.status(200).json({ ok: true });
+        } catch (error: any) {
+            return res.status(200).json({ ok: true });
         }
     }
 

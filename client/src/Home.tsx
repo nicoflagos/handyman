@@ -7,6 +7,7 @@ import { listServices, ServiceItem } from './services/catalog';
 export default function Home() {
   const auth = useAuth();
   const [services, setServices] = useState<ServiceItem[] | null>(null);
+  const isAuthed = !!auth.me || !!auth.token;
 
   useEffect(() => {
     let mounted = true;
@@ -41,7 +42,7 @@ export default function Home() {
   return (
     <div className="col" style={{ gap: 18 }}>
       <div className="row" style={{ justifyContent: 'flex-end', flexWrap: 'wrap', gap: 10 }}>
-        {auth.token ? (
+        {isAuthed ? (
           <Link to="/dashboard">
             <Button variant="ghost">Go to dashboard</Button>
           </Link>
@@ -68,7 +69,7 @@ export default function Home() {
         <p style={{ fontSize: 16, marginTop: 8, color: 'var(--color-text-muted)' }}>Track everything.</p>
 
         <div className="landingCtas">
-          {auth.token ? (
+          {isAuthed ? (
             <Link to="/dashboard">
               <Button>Go to dashboard</Button>
             </Link>

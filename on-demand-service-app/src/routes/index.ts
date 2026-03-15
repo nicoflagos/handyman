@@ -23,6 +23,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 *
 
 // Authentication routes
 router.post('/auth/login', (req, res) => authController.login(req, res));
+router.post('/auth/logout', (req, res) => authController.logout(req, res));
 router.post('/auth/register', (req, res) => authController.register(req, res));
 router.post('/auth/verify-email', (req, res) => authController.verifyEmail(req, res));
 router.post('/auth/resend-verify-email', (req, res) => authController.resendVerifyEmail(req, res));

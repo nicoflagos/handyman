@@ -36,7 +36,8 @@ export default function Dashboard() {
   const [tx, setTx] = React.useState<Transaction[]>([]);
   const [state, setState] = React.useState<'loading' | 'ready' | 'error'>('loading');
 
-  const isProvider = auth.claims?.role === 'provider' || auth.claims?.role === 'admin';
+  const role = auth.me?.role || auth.claims?.role || me?.role;
+  const isProvider = role === 'provider' || role === 'admin';
 
   React.useEffect(() => {
     setState('loading');
@@ -89,7 +90,8 @@ export default function Dashboard() {
     };
   }, [isProvider, state]);
 
-  const fullName = nameFrom(me, auth.claims);
+  const fullName =
+    [me?.firstName, me?.lastName].filter(Boolean).join(' ').trim() || me?.username || me?.email || 'there';
   const roleLabel = me?.role === 'provider' ? 'Handyman' : me?.role === 'customer' ? 'Customer' : me?.role === 'admin' ? 'Admin' : 'User';
   const rating =
     me?.role === 'provider'

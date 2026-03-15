@@ -16,14 +16,17 @@ import Privacy from './pages/Privacy';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
-  if (!auth.token) return <Navigate to="/login" replace />;
+  if (auth.loading) return <div style={{ padding: 16, color: 'rgba(255,255,255,0.75)' }}>Loading…</div>;
+  if (!auth.me && !auth.token) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
 function RequireRole({ role, children }: { role: 'admin' | 'provider' | 'customer'; children: React.ReactNode }) {
   const auth = useAuth();
-  if (!auth.token) return <Navigate to="/login" replace />;
-  if (auth.claims?.role !== role) return <Navigate to="/dashboard" replace />;
+  if (auth.loading) return <div style={{ padding: 16, color: 'rgba(255,255,255,0.75)' }}>Loading…</div>;
+  if (!auth.me && !auth.token) return <Navigate to="/login" replace />;
+  const currentRole = auth.me?.role || auth.claims?.role;
+  if (currentRole !== role) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -35,8 +38,10 @@ function RequireAnyRole({
   children: React.ReactNode;
 }) {
   const auth = useAuth();
-  if (!auth.token) return <Navigate to="/login" replace />;
-  if (!auth.claims?.role || !roles.includes(auth.claims.role)) return <Navigate to="/dashboard" replace />;
+  if (auth.loading) return <div style={{ padding: 16, color: 'rgba(255,255,255,0.75)' }}>Loading…</div>;
+  if (!auth.me && !auth.token) return <Navigate to="/login" replace />;
+  const currentRole = auth.me?.role || auth.claims?.role;
+  if (!currentRole || !roles.includes(currentRole)) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 

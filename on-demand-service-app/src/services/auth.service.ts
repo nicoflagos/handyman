@@ -120,7 +120,7 @@ export class AuthService {
                 role: (user as any).role,
             },
             config.jwtSecret,
-            { expiresIn: '24h' },
+            { expiresIn: config.jwtExpiresIn },
         );
         return token;
     }

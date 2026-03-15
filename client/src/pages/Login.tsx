@@ -6,6 +6,7 @@ import { login } from '../services/auth';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { InlineNotice } from '../ui/Toast';
+import { getAuthMode } from '../auth/authMode';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -21,8 +22,11 @@ export default function Login() {
     setError(null);
     try {
       setLoading(true);
-      const token = await login({ email, password });
-      auth.setToken(token);
+      const result = await login({ email, password });
+      if (getAuthMode() === 'token' && result?.token) {
+        auth.setToken(result.token);
+      }
+      await auth.refreshMe();
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Login failed');

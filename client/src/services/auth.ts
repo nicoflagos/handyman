@@ -2,7 +2,12 @@ import { apiClient } from '../apiClient';
 
 export async function login({ email, password }: { email: string; password: string }) {
   const res = await apiClient.post('/auth/login', { email, password });
-  return res.data.token;
+  return res.data as { token?: string; expiresIn?: string };
+}
+
+export async function logout() {
+  const res = await apiClient.post('/auth/logout');
+  return res.data as { ok: boolean };
 }
 
 export async function register({
