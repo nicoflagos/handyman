@@ -5,6 +5,8 @@ export type TransactionDirection = 'in' | 'out';
 export type TransactionType =
   | 'wallet_topup'
   | 'order_escrow_debit'
+  | 'materials_payment'
+  | 'materials_payout'
   | 'order_payout'
   | 'platform_fee'
   | 'wallet_adjustment';
@@ -27,7 +29,15 @@ const TransactionSchema = new Schema<ITransactionDocument>(
     direction: { type: String, enum: ['in', 'out'], required: true, index: true },
     type: {
       type: String,
-      enum: ['wallet_topup', 'order_escrow_debit', 'order_payout', 'platform_fee', 'wallet_adjustment'],
+      enum: [
+        'wallet_topup',
+        'order_escrow_debit',
+        'materials_payment',
+        'materials_payout',
+        'order_payout',
+        'platform_fee',
+        'wallet_adjustment',
+      ],
       required: true,
       index: true,
     },
@@ -40,4 +50,3 @@ const TransactionSchema = new Schema<ITransactionDocument>(
 );
 
 export const Transaction = model<ITransactionDocument>('Transaction', TransactionSchema);
-

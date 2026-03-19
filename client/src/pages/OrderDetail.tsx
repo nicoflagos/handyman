@@ -14,7 +14,7 @@ import {
   sendOrderMessage,
   setOrderStatus,
   startOrder,
-  updateOrderPrice,
+  updateOrderPricing,
 } from '../services/orders';
 import { InlineNotice } from '../ui/Toast';
 import { Button } from '../ui/Button';
@@ -62,6 +62,8 @@ export default function OrderDetail() {
   const [afterImage, setAfterImage] = useState<File | null>(null);
   const [priceBusy, setPriceBusy] = useState(false);
   const [editPrice, setEditPrice] = useState('');
+  const [editMaterialsIncluded, setEditMaterialsIncluded] = useState(false);
+  const [editMaterialsAmount, setEditMaterialsAmount] = useState('');
   const [editPriceBusy, setEditPriceBusy] = useState(false);
   const [messages, setMessages] = useState<OrderMessage[]>([]);
   const [chatState, setChatState] = useState<'idle' | 'loading' | 'error'>('idle');
@@ -83,6 +85,8 @@ export default function OrderDetail() {
       .then(o => {
         setOrder(o);
         setEditPrice(String(o?.price ?? ''));
+        setEditMaterialsIncluded(!!o?.materialsIncluded && Number(o?.materialsAmount || 0) > 0);
+        setEditMaterialsAmount(String(o?.materialsAmount ?? ''));
         setState('ready');
       })
       .catch(err => {
@@ -230,9 +234,24 @@ export default function OrderDetail() {
       setError('Please enter a valid service fee.');
       return;
     }
+    const m = editMaterialsIncluded ? Number(editMaterialsAmount) : 0;
+    if (editMaterialsIncluded) {
+      if (!Number.isFinite(m) || m < 0) {
+        setError('Please enter a valid materials amount (or turn off materials).');
+        return;
+      }
+      if (m > 5000000) {
+        setError('Materials amount is too large. Please review the value.');
+        return;
+      }
+    }
     setEditPriceBusy(true);
     try {
-      const updated = await updateOrderPrice(order._id, n);
+      const updated = await updateOrderPricing(order._id, {
+        price: n,
+        materialsIncluded: editMaterialsIncluded,
+        materialsAmount: editMaterialsIncluded ? Math.round(m) : 0,
+      });
       setOrder(updated);
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Unable to update service fee');
@@ -356,6 +375,12 @@ export default function OrderDetail() {
                   <span className="pill">Service: {order.serviceKey}</span>
                   <span className="pill">Service fee: ₦{Number(order.price || 0).toLocaleString()}</span>
                   <span className="pill">Service fee confirmed: {order.priceConfirmed ? 'Yes' : 'No'}</span>
+                  {Number(order.materialsAmount || 0) > 0 ? (
+                    <span className="pill">
+                      Materials: ₦{Number(order.materialsAmount || 0).toLocaleString()}
+                      {order.materialsReleasedAt ? ' (released)' : ''}
+                    </span>
+                  ) : null}
                   {order.address ? <span className="pill">Address: {order.address}</span> : null}
                   {order.scheduledAt ? <span className="pill">When: {formatDate(order.scheduledAt)}</span> : null}
                   {isCustomer && (order.startVerificationCode || order.verificationCode) ? (
@@ -369,7 +394,7 @@ export default function OrderDetail() {
                 {isCustomer && (order.status === 'requested' || order.status === 'accepted' || order.status === 'arrived') && !order.priceConfirmed ? (
                   <div style={{ marginTop: 12 }}>
                     <div className="pill" style={{ marginBottom: 10 }}>
-                      Edit service fee
+                      Edit pricing
                     </div>
                     <div className="row" style={{ gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                       <label style={{ display: 'grid', gap: 6, flex: 1, minWidth: 220 }}>
@@ -389,14 +414,48 @@ export default function OrderDetail() {
                             outline: 'none',
                           }}
                         />
-                        <span className="muted" style={{ fontSize: 13 }}>
-                          Excludes cost of materials. You can edit until the handyman confirms.
-                        </span>
                       </label>
+                      <div style={{ minWidth: 240 }}>
+                        <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span className="muted" style={{ fontSize: 13 }}>
+                            Include materials?
+                          </span>
+                          <label className="switch" aria-label="Materials toggle">
+                            <input
+                              type="checkbox"
+                              checked={editMaterialsIncluded}
+                              onChange={e => setEditMaterialsIncluded(e.target.checked)}
+                            />
+                            <span className="switchSlider" />
+                          </label>
+                        </div>
+                        <input
+                          value={editMaterialsAmount}
+                          onChange={e => setEditMaterialsAmount(e.target.value)}
+                          inputMode="numeric"
+                          placeholder="Materials amount (NGN)"
+                          disabled={!editMaterialsIncluded}
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            borderRadius: 12,
+                            border: '1px solid rgba(255,255,255,0.14)',
+                            background: editMaterialsIncluded ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.08)',
+                            color: 'rgba(255,255,255,0.92)',
+                            outline: 'none',
+                          }}
+                        />
+                        <span className="muted" style={{ fontSize: 13, display: 'block', marginTop: 6 }}>
+                          Materials amount is paid out when the job starts. You can edit until the handyman confirms.
+                        </span>
+                      </div>
                       <Button loading={editPriceBusy} onClick={saveEditedPrice}>
                         Save
                       </Button>
                     </div>
+                    <span className="muted" style={{ fontSize: 13, display: 'block', marginTop: 8 }}>
+                      Service fee excludes materials by default. If you include materials, the system releases that amount to the handyman immediately at job start.
+                    </span>
                   </div>
                 ) : null}
 

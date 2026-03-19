@@ -56,8 +56,9 @@ By creating an account, accessing, or using the Platform, you agree to these Ter
 7.2 **Platform fees (5% each side):** The Platform charges a Platform Fee equal to **5% of the Service Fee** to the Customer and a Platform Fee equal to **5% of the Service Fee** to the Handyman (deducted from the Handyman payout).  
 7.3 **Sufficient balance requirement:** The Platform blocks Order creation when the Customer Wallet balance is insufficient to cover the Service Fee plus the Customer Platform Fee.  
 7.4 **Escrow Hold on start:** When the Handyman starts a job, the Platform debits the Customer Wallet for the Service Fee plus the Customer Platform Fee and holds the funds as an Escrow Hold.  
-7.5 **Release on completion:** When the Handyman completes a job, the Platform releases funds to the Handyman Wallet by paying the Service Fee minus the Handyman Platform Fee and records the transaction(s) in the transaction history shown in the Platform.  
-7.6 **No banking relationship:** The Wallet is not a bank account and does not create a banking relationship.
+7.5 **Materials amount (optional):** If the Customer marks that a Job includes materials and enters a materials amount, the Platform debits that materials amount at job start and releases it to the Handyman immediately. Materials payments are not held in escrow.  
+7.6 **Release on completion:** When the Handyman completes a job, the Platform releases funds to the Handyman Wallet by paying the Service Fee minus the Handyman Platform Fee and records the transaction(s) in the transaction history shown in the Platform.  
+7.7 **No banking relationship:** The Wallet is not a bank account and does not create a banking relationship.
 
 ## 8) Cancellations and Declines
 8.1 **Customer cancellation:** The Customer can cancel an Order only while it is `requested`, `accepted`, or `arrived`, and only before Escrow Hold funding.  

@@ -12,6 +12,8 @@ type CreateOrderInput = {
   state: string;
   lga: string;
   lc?: string;
+  materialsIncluded?: boolean;
+  materialsAmount?: number;
   price: number;
   scheduledAt?: Date;
 };
@@ -33,6 +35,8 @@ export class OrderService {
       state: input.state,
       lga: input.lga,
       lc: input.lc,
+      materialsIncluded: !!input.materialsIncluded,
+      materialsAmount: Number.isFinite(Number(input.materialsAmount)) ? Math.max(0, Number(input.materialsAmount)) : 0,
       price: input.price,
       startVerificationCode,
       completionVerificationCode,

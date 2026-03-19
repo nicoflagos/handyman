@@ -22,6 +22,9 @@ export interface IOrderDocument extends Document {
   state: string;
   lga: string;
   lc?: string;
+  materialsIncluded?: boolean;
+  materialsAmount?: number;
+  materialsReleasedAt?: Date;
   // Deprecated (v1). Kept for backward compatibility with older clients.
   verificationCode?: string;
   startVerificationCode?: string;
@@ -61,6 +64,9 @@ const OrderSchema = new Schema<IOrderDocument>(
     state: { type: String, required: true, trim: true, index: true },
     lga: { type: String, required: true, trim: true, index: true },
     lc: { type: String, required: false, trim: true, index: true },
+    materialsIncluded: { type: Boolean, required: false, default: false, index: true },
+    materialsAmount: { type: Number, required: false, default: 0, min: 0 },
+    materialsReleasedAt: { type: Date, required: false },
     verificationCode: { type: String, required: false, trim: true, index: false },
     startVerificationCode: { type: String, required: false, trim: true, index: false },
     completionVerificationCode: { type: String, required: false, trim: true, index: false },

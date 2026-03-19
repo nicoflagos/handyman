@@ -36,6 +36,9 @@ export type Order = {
   state: string;
   lga: string;
   lc?: string;
+  materialsIncluded?: boolean;
+  materialsAmount?: number;
+  materialsReleasedAt?: string;
   price: number;
   priceConfirmed?: boolean;
   customerImageUrls?: string[];
@@ -81,6 +84,8 @@ export async function createOrder(input: {
   state: string;
   lga: string;
   lc: string;
+  materialsIncluded?: boolean;
+  materialsAmount?: number;
   price: number;
   scheduledAt?: string;
 }): Promise<Order> {
@@ -145,6 +150,14 @@ export async function confirmOrderPrice(orderId: string): Promise<Order> {
 
 export async function updateOrderPrice(orderId: string, price: number): Promise<Order> {
   const res = await apiClient.put(`/orders/${orderId}/price`, { price });
+  return res.data as Order;
+}
+
+export async function updateOrderPricing(
+  orderId: string,
+  input: { price: number; materialsIncluded?: boolean; materialsAmount?: number },
+): Promise<Order> {
+  const res = await apiClient.put(`/orders/${orderId}/price`, input);
   return res.data as Order;
 }
 

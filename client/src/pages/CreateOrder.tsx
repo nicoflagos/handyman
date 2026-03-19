@@ -31,6 +31,8 @@ export default function CreateOrder() {
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [price, setPrice] = useState('');
+  const [materialsIncluded, setMaterialsIncluded] = useState(false);
+  const [materialsAmount, setMaterialsAmount] = useState('');
   const [jobImages, setJobImages] = useState<File[]>([]);
 
   const jobImagePreviews = useMemo(() => jobImages.map(f => URL.createObjectURL(f)), [jobImages]);
@@ -76,8 +78,11 @@ export default function CreateOrder() {
   }, []);
 
   const numericPrice = Number(price);
+  const numericMaterials = materialsIncluded ? Number(materialsAmount) : 0;
   const platformFee = Number.isFinite(numericPrice) && numericPrice > 0 ? Math.round(numericPrice * 0.05) : 0;
-  const totalDue = Number.isFinite(numericPrice) && numericPrice > 0 ? numericPrice + platformFee : 0;
+  const materialsDue =
+    materialsIncluded && Number.isFinite(numericMaterials) && numericMaterials > 0 ? Math.round(numericMaterials) : 0;
+  const totalDue = Number.isFinite(numericPrice) && numericPrice > 0 ? numericPrice + platformFee + materialsDue : 0;
   const insufficientFunds = walletBalance !== null && totalDue > 0 && walletBalance < totalDue;
 
   async function onSubmit(e: React.FormEvent) {
@@ -92,9 +97,21 @@ export default function CreateOrder() {
       setError('Please enter a valid service fee.');
       return;
     }
+    if (materialsIncluded) {
+      if (!Number.isFinite(numericMaterials) || numericMaterials < 0) {
+        setError('Please enter a valid materials amount (or turn off materials).');
+        return;
+      }
+      if (numericMaterials > 5000000) {
+        setError('Materials amount is too large. Please review the value.');
+        return;
+      }
+    }
     if (insufficientFunds) {
       setError(
-        `Insufficient wallet balance. Need \u20A6${totalDue.toLocaleString()} (\u20A6${numericPrice.toLocaleString()} + \u20A6${platformFee.toLocaleString()} platform fee).`,
+        `Insufficient wallet balance. Need \u20A6${totalDue.toLocaleString()} (\u20A6${numericPrice.toLocaleString()} + \u20A6${platformFee.toLocaleString()} platform fee${
+          materialsDue > 0 ? ` + \u20A6${materialsDue.toLocaleString()} materials` : ''
+        }).`,
       );
       return;
     }
@@ -115,6 +132,8 @@ export default function CreateOrder() {
         state: location.state,
         lga: location.lga,
         lc: location.lc,
+        materialsIncluded: materialsIncluded || undefined,
+        materialsAmount: materialsDue || undefined,
         price: numericPrice,
         scheduledAt,
       });
@@ -203,11 +222,42 @@ export default function CreateOrder() {
                 placeholder="e.g. 5000"
                 hint={
                   walletBalance === null
-                    ? 'Service fee only (excludes cost of materials).'
-                    : `Wallet: \u20A6${walletBalance.toLocaleString()}. Total (fee+5%): \u20A6${totalDue.toLocaleString()}.`
+                    ? 'Service fee only (excludes cost of materials by default).'
+                    : `Wallet: \u20A6${walletBalance.toLocaleString()}. Total due now: \u20A6${totalDue.toLocaleString()}.`
                 }
                 error={insufficientFunds ? 'Insufficient wallet balance for this booking.' : null}
               />
+
+              <div className="landingCard" style={{ padding: 12 }}>
+                <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>Include materials cost?</div>
+                    <div className="muted" style={{ fontSize: 13 }}>
+                      If enabled, materials amount is released to the handyman immediately when the job starts.
+                    </div>
+                  </div>
+                  <label className="switch" aria-label="Materials toggle">
+                    <input
+                      type="checkbox"
+                      checked={materialsIncluded}
+                      onChange={e => setMaterialsIncluded(e.target.checked)}
+                    />
+                    <span className="switchSlider" />
+                  </label>
+                </div>
+                {materialsIncluded ? (
+                  <div style={{ marginTop: 10 }}>
+                    <Input
+                      label="Materials amount (NGN)"
+                      value={materialsAmount}
+                      onChange={e => setMaterialsAmount(e.target.value)}
+                      inputMode="numeric"
+                      placeholder="e.g. 2000"
+                      hint="This amount is paid out at job start. Double-check before submitting."
+                    />
+                  </div>
+                ) : null}
+              </div>
               <Input
                 label="Preferred date"
                 value={scheduledDate}

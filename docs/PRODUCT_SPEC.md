@@ -74,6 +74,9 @@ Source: `on-demand-service-app/src/models/mongo/order.schema.ts`
 - Parties: `customerId`, optional `providerId`
 - Service: `serviceKey`, `title`, `description`
 - Location: `country`, `state`, `lga`, optional `lc`, `address`
+- Optional materials:
+  - `materialsIncluded`, `materialsAmount`
+  - `materialsReleasedAt` (set when materials are paid out at job start)
 - Price:
   - `price` (service fee; excludes materials unless agreed)
   - `priceConfirmed`, `priceConfirmedAt`
@@ -207,6 +210,10 @@ On success:
 - Transactions are recorded:
   - customer: `order_escrow_debit` (out)
   - customer: `platform_fee` (out) — 5% of service fee
+- If materials are included (`materialsAmount > 0`):
+  - customer: `materials_payment` (out) at job start
+  - handyman: `materials_payout` (in) at job start
+  - order: `materialsReleasedAt` is set
 - Push notifications are sent:
   - customer: job started/in progress
   - handyman: job in progress confirmation

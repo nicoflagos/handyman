@@ -139,10 +139,21 @@ export class OrdersController {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
       const role = await this.userService.getRole(new Types.ObjectId(req.userId));
       if (role !== 'customer') return res.status(403).json({ message: 'Only customers can create orders' });
-      const { serviceKey, title, description, address, scheduledAt, country, state, lga, lc, price } = req.body || {};
+      const { serviceKey, title, description, address, scheduledAt, country, state, lga, lc, price, materialsIncluded, materialsAmount } =
+        req.body || {};
       const nPrice = Number(price);
+      const includesMaterials = !!materialsIncluded;
+      const nMaterials = includesMaterials ? Number(materialsAmount) : 0;
       if (!serviceKey || !title || !country || !state || !lga || !lc || !Number.isFinite(nPrice) || nPrice <= 0) {
         return res.status(400).json({ message: 'serviceKey, title, country, state, lga, lc, and price are required' });
+      }
+      if (includesMaterials) {
+        if (!Number.isFinite(nMaterials) || nMaterials < 0) {
+          return res.status(400).json({ message: 'materialsAmount must be a non-negative number' });
+        }
+        if (nMaterials > 5_000_000) {
+          return res.status(400).json({ message: 'materialsAmount is too large' });
+        }
       }
 
       let parsedScheduledAt: Date | undefined = undefined;
@@ -158,7 +169,8 @@ export class OrdersController {
 
       // Ensure customer can afford job fee + 5% platform fee (commission).
       const platformFee = Math.round(nPrice * 0.05);
-      const total = nPrice + platformFee;
+      const materials = includesMaterials ? Math.round(nMaterials) : 0;
+      const total = nPrice + platformFee + materials;
       const customer: any = await this.userService.getById(req.userId);
       if (!customer) return res.status(400).json({ message: 'Customer not found' });
       if (typeof customer.walletBalance !== 'number') {
@@ -167,7 +179,9 @@ export class OrdersController {
       }
       if (customer.walletBalance < total) {
         return res.status(400).json({
-          message: `Insufficient wallet balance. Need \u20A6${total.toLocaleString('en-NG')} (\u20A6${nPrice.toLocaleString('en-NG')} + \u20A6${platformFee.toLocaleString('en-NG')} platform fee).`,
+          message: `Insufficient wallet balance. Need \u20A6${total.toLocaleString('en-NG')} (\u20A6${nPrice.toLocaleString('en-NG')} + \u20A6${platformFee.toLocaleString('en-NG')} platform fee${
+            materials > 0 ? ` + \u20A6${materials.toLocaleString('en-NG')} materials` : ''
+          }).`,
         });
       }
 
@@ -182,6 +196,8 @@ export class OrdersController {
         state,
         lga,
         lc,
+        materialsIncluded: includesMaterials,
+        materialsAmount: materials,
         price: nPrice,
         scheduledAt: parsedScheduledAt,
       });
@@ -210,7 +226,9 @@ export class OrdersController {
               pushService
                 .notifyUser(p._id as any, {
                   title: 'New job posted',
-                  body: `New job in ${lcName || lc} (${lga} LGA, ${state}). Fee: ${fmt(nPrice)}.`,
+                  body: `New job in ${lcName || lc} (${lga} LGA, ${state}). Fee: ${fmt(nPrice)}${
+                    materials > 0 ? ` (+ materials ${fmt(materials)} at start)` : ''
+                  }.`,
                   data: { event: 'job_posted', orderId, state, lga, lc },
                 })
                 .catch(err => console.log(`[push] job posted -> handyman failed: ${(err as any)?.message || err}`)),
@@ -738,25 +756,40 @@ export class OrdersController {
         return res.status(400).json({ message: 'Service fee cannot be edited after handyman confirms price' });
       }
 
-      const { price } = req.body || {};
+      const { price, materialsIncluded, materialsAmount } = req.body || {};
       const nPrice = Number(price);
       if (!Number.isFinite(nPrice) || nPrice <= 0) return res.status(400).json({ message: 'price must be a positive number' });
 
       // Ensure customer can afford job fee + 5% platform fee (commission).
       const platformFee = Math.round(nPrice * 0.05);
-      const total = nPrice + platformFee;
+      const includesMaterials = typeof materialsIncluded === 'boolean' ? materialsIncluded : !!order.materialsIncluded;
+      const rawMaterials =
+        typeof materialsAmount === 'number' || typeof materialsAmount === 'string'
+          ? Number(materialsAmount)
+          : Number(order.materialsAmount || 0);
+      const nMaterials = includesMaterials ? rawMaterials : 0;
+      if (includesMaterials) {
+        if (!Number.isFinite(nMaterials) || nMaterials < 0) return res.status(400).json({ message: 'materialsAmount must be non-negative' });
+        if (nMaterials > 5_000_000) return res.status(400).json({ message: 'materialsAmount is too large' });
+      }
+      const materials = includesMaterials ? Math.round(nMaterials) : 0;
+      const total = nPrice + platformFee + materials;
       const customer: any = await this.userService.getById(String(order.customerId));
       if (!customer) return res.status(400).json({ message: 'Customer not found' });
       if (typeof customer.walletBalance !== 'number') customer.walletBalance = 100000;
       if (customer.walletBalance < total) {
         return res.status(400).json({
-          message: `Insufficient wallet balance. Need \u20A6${total.toLocaleString('en-NG')} (\u20A6${nPrice.toLocaleString('en-NG')} + \u20A6${platformFee.toLocaleString('en-NG')} platform fee).`,
+          message: `Insufficient wallet balance. Need \u20A6${total.toLocaleString('en-NG')} (\u20A6${nPrice.toLocaleString('en-NG')} + \u20A6${platformFee.toLocaleString('en-NG')} platform fee${
+            materials > 0 ? ` + \u20A6${materials.toLocaleString('en-NG')} materials` : ''
+          }).`,
         });
       }
 
       order.price = nPrice;
       order.priceConfirmed = false;
       order.priceConfirmedAt = undefined;
+      order.materialsIncluded = includesMaterials;
+      order.materialsAmount = materials;
       order.timeline.push({ status: order.status, at: new Date(), by: actorId, note: `Service fee updated to ₦${nPrice}` });
       await order.save();
 
@@ -811,7 +844,12 @@ export class OrdersController {
         const jobFee = Number(order.price || 0);
         if (!Number.isFinite(jobFee) || jobFee <= 0) return res.status(400).json({ message: 'Order price is invalid' });
         const platformFee = Math.round(jobFee * 0.05);
-        const total = jobFee + platformFee;
+        const materials = order.materialsIncluded ? Number(order.materialsAmount || 0) : 0;
+        if (order.materialsIncluded) {
+          if (!Number.isFinite(materials) || materials < 0) return res.status(400).json({ message: 'Order materials amount is invalid' });
+        }
+        const total = jobFee + platformFee + (order.materialsIncluded ? Math.round(materials) : 0);
+        const materialsRounded = order.materialsIncluded ? Math.round(materials) : 0;
 
         const customer: any = await this.userService.getById(String(order.customerId));
         if (!customer) return res.status(400).json({ message: 'Customer not found' });
@@ -821,7 +859,7 @@ export class OrdersController {
         customer.walletBalance -= total;
         await customer.save();
 
-        await Transaction.create([
+        const txns: any[] = [
           {
             userId: new Types.ObjectId(String(order.customerId)),
             direction: 'out',
@@ -840,9 +878,44 @@ export class OrdersController {
             ref: `order:${order._id}`,
             meta: { orderId: String(order._id) },
           },
-        ]);
+        ];
 
-        order.escrowTotal = total;
+        // If materials are included, release that portion to the handyman immediately at job start.
+        if (materialsRounded > 0) {
+          const handyman: any = await this.userService.getById(String(order.providerId));
+          if (!handyman) return res.status(400).json({ message: 'Handyman not found' });
+          if (typeof handyman.walletBalance !== 'number') handyman.walletBalance = 100000;
+          handyman.walletBalance += materialsRounded;
+          await handyman.save();
+
+          txns.push(
+            {
+              userId: new Types.ObjectId(String(order.customerId)),
+              direction: 'out',
+              type: 'materials_payment',
+              amount: materialsRounded,
+              currency: 'NGN',
+              ref: `order:${order._id}`,
+              meta: { orderId: String(order._id) },
+            },
+            {
+              userId: new Types.ObjectId(String(order.providerId)),
+              direction: 'in',
+              type: 'materials_payout',
+              amount: materialsRounded,
+              currency: 'NGN',
+              ref: `order:${order._id}`,
+              meta: { orderId: String(order._id) },
+            },
+          );
+
+          order.materialsReleasedAt = new Date();
+        }
+
+        await Transaction.create(txns);
+
+        // Escrow total represents the amount held until completion (service fee + customer platform fee).
+        order.escrowTotal = jobFee + platformFee;
         order.escrowJobAmount = jobFee;
         order.escrowPlatformFee = platformFee;
         order.escrowFundedAt = new Date();
@@ -858,13 +931,14 @@ export class OrdersController {
       const jobFee = Number(order.escrowJobAmount || order.price || 0);
       const platformFee = Number(order.escrowPlatformFee || Math.round(jobFee * 0.05));
       const total = jobFee + platformFee;
+      const materialsRounded = order.materialsIncluded ? Math.round(Number(order.materialsAmount || 0)) : 0;
       const fmt = (n: number) => `₦${Math.round(n).toLocaleString('en-NG')}`;
 
       if (order.customerId) {
         void pushService
           .notifyUser(order.customerId, {
             title: 'Job started',
-            body: `Job started for "${title}". ${fmt(total)} held in escrow.`,
+            body: `Job started for "${title}". ${fmt(total)} held in escrow${materialsRounded > 0 ? `; ${fmt(materialsRounded)} released for materials.` : ''}.`,
             data: { event: 'order_in_progress', orderId },
           })
           .catch(err => console.log(`[push] order in_progress -> customer failed: ${(err as any)?.message || err}`));
@@ -873,7 +947,7 @@ export class OrdersController {
         void pushService
           .notifyUser(order.providerId, {
             title: 'Job started',
-            body: `You started "${title}". Escrow funded (${fmt(jobFee)} + ${fmt(platformFee)} fee).`,
+            body: `You started "${title}". Escrow funded (${fmt(jobFee)} + ${fmt(platformFee)} fee)${materialsRounded > 0 ? `; materials payout ${fmt(materialsRounded)}.` : ''}.`,
             data: { event: 'order_in_progress', orderId },
           })
           .catch(err => console.log(`[push] order in_progress -> handyman failed: ${(err as any)?.message || err}`));
