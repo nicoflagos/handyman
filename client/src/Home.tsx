@@ -66,7 +66,9 @@ export default function Home() {
         <p style={{ fontSize: 20, marginTop: 10, color: 'var(--color-text-secondary)' }}>
           Connect with local skilled workers, technicians and artisans in your area
         </p>
-        <p style={{ fontSize: 16, marginTop: 8, color: 'var(--color-text-muted)' }}>Track everything.</p>
+        <p style={{ fontSize: 16, marginTop: 8, color: 'var(--color-text-muted)' }}>
+          Pay on start (escrow), track everything, and rate after completion.
+        </p>
 
         <div className="landingCtas">
           {isAuthed ? (
@@ -111,7 +113,7 @@ export default function Home() {
             <div className="landingCard">
               <h4 style={{ marginBottom: 8 }}>3) Get it done</h4>
               <p className="muted" style={{ margin: 0 }}>
-                Track progress, verify with start/completion codes, and settle securely through escrow.
+                Pay only when the handyman starts (escrow hold), verify with start/completion codes, and release funds on completion.
               </p>
             </div>
           </div>
@@ -140,6 +142,43 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="section">
+        <div className="container">
+          <div style={{ textAlign: 'center', marginBottom: 18 }}>
+            <h2>Bundles</h2>
+            <p className="muted" style={{ marginTop: 8 }}>
+              Shortcuts for common recurring needs (v1 creates a single request with a bundle note).
+            </p>
+          </div>
+
+          <div className="grid3">
+            {[
+              { key: 'cleaning_weekly', title: 'Cleaning (weekly)', desc: 'Weekly cleaning plan' },
+              { key: 'ac_maintenance', title: 'AC maintenance', desc: 'Preventive servicing and checks' },
+              { key: 'plumbing_checks', title: 'Plumbing checks', desc: 'Leak checks and fittings inspection' },
+            ].map(b => (
+              <div key={b.key} className="landingCard">
+                <h4 style={{ marginBottom: 8 }}>{b.title}</h4>
+                <p className="muted" style={{ margin: 0 }}>
+                  {b.desc}
+                </p>
+                <div style={{ marginTop: 12 }}>
+                  {isAuthed ? (
+                    <Link to={`/orders/new?bundle=${encodeURIComponent(b.key)}`} style={{ textDecoration: 'none' }}>
+                      <Button variant="ghost">Create request</Button>
+                    </Link>
+                  ) : (
+                    <Link to="/register" style={{ textDecoration: 'none' }}>
+                      <Button variant="ghost">Register to use</Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="sectionAlt">
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: 18 }}>
@@ -159,7 +198,7 @@ export default function Home() {
             <div className="landingCard">
               <h5 style={{ marginBottom: 6 }}>Escrow payments</h5>
               <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-                Funds are held when the job starts and released on completion.
+                Pay on start: funds are held in escrow when the job starts and released on completion.
               </p>
             </div>
             <div className="landingCard">

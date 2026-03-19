@@ -80,6 +80,7 @@ export async function createOrder(input: {
   title: string;
   description?: string;
   address?: string;
+  preferredProviderId?: string;
   country: string;
   state: string;
   lga: string;

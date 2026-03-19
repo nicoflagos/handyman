@@ -9,13 +9,33 @@ import { InlineNotice } from '../ui/Toast';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { NigeriaLocationSelect, NigeriaLocationValue } from '../components/NigeriaLocationSelect';
 
-function useQuery() {
-  const { search } = useLocation();
-  return useMemo(() => new URLSearchParams(search), [search]);
-}
+const BUNDLES: Record<
+  string,
+  { serviceKey: string; title: string; description: string }
+> = {
+  cleaning_weekly: {
+    serviceKey: 'cleaning',
+    title: 'Weekly cleaning (bundle)',
+    description:
+      'Bundle request: weekly cleaning.\n\nFrequency: weekly\nDuration: 4 weeks\n\nPlease confirm schedule, scope, and materials (if any).',
+  },
+  ac_maintenance: {
+    serviceKey: 'ac_technician',
+    title: 'AC maintenance (bundle)',
+    description:
+      'Bundle request: AC preventive maintenance.\n\nScope: inspection + cleaning + performance checks\n\nPlease confirm availability and any materials needed.',
+  },
+  plumbing_checks: {
+    serviceKey: 'plumber',
+    title: 'Plumbing checks (bundle)',
+    description:
+      'Bundle request: plumbing inspection/check.\n\nScope: leak checks, fittings inspection, basic fixes\n\nPlease confirm availability and any materials needed.',
+  },
+};
 
 export default function CreateOrder() {
-  const query = useQuery();
+  const loc = useLocation();
+  const query = useMemo(() => new URLSearchParams(loc.search), [loc.search]);
   const navigate = useNavigate();
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
@@ -24,15 +44,24 @@ export default function CreateOrder() {
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
 
-  const [serviceKey, setServiceKey] = useState(query.get('service') || 'handyman');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [location, setLocation] = useState<NigeriaLocationValue>({ state: '', lga: '', lc: '', street: '' });
+  const prefill: any = (loc as any)?.state || {};
+  const [serviceKey, setServiceKey] = useState<string>(() => String(query.get('service') || prefill.serviceKey || 'handyman'));
+  const [title, setTitle] = useState<string>(() => String(prefill.title || ''));
+  const [description, setDescription] = useState<string>(() => String(prefill.description || ''));
+  const [location, setLocation] = useState<NigeriaLocationValue>(() => ({
+    state: String(prefill.state || ''),
+    lga: String(prefill.lga || ''),
+    lc: String(prefill.lc || ''),
+    street: String(prefill.street || ''),
+  }));
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
-  const [price, setPrice] = useState('');
-  const [materialsIncluded, setMaterialsIncluded] = useState(false);
-  const [materialsAmount, setMaterialsAmount] = useState('');
+  const [price, setPrice] = useState<string>(() => (Number.isFinite(Number(prefill.price)) ? String(prefill.price) : ''));
+  const [materialsIncluded, setMaterialsIncluded] = useState<boolean>(() => !!prefill.materialsIncluded);
+  const [materialsAmount, setMaterialsAmount] = useState<string>(() =>
+    Number.isFinite(Number(prefill.materialsAmount)) ? String(prefill.materialsAmount) : '',
+  );
+  const [preferredProviderId, setPreferredProviderId] = useState<string>(() => String(prefill.preferredProviderId || ''));
   const [jobImages, setJobImages] = useState<File[]>([]);
 
   const jobImagePreviews = useMemo(() => jobImages.map(f => URL.createObjectURL(f)), [jobImages]);
@@ -70,6 +99,16 @@ export default function CreateOrder() {
       .then(items => setServices(items))
       .finally(() => setLoadingServices(false));
   }, []);
+
+  useEffect(() => {
+    const bundleKey = String(query.get('bundle') || '').trim();
+    if (!bundleKey) return;
+    const bundle = BUNDLES[bundleKey];
+    if (!bundle) return;
+    setServiceKey((prev: string) => (prev && prev !== 'handyman' ? prev : bundle.serviceKey));
+    setTitle(prev => (prev ? prev : bundle.title));
+    setDescription(prev => (prev ? prev : bundle.description));
+  }, [query]);
 
   useEffect(() => {
     getMe()
@@ -128,6 +167,7 @@ export default function CreateOrder() {
         title: title || `Request: ${serviceKey}`,
         description: description || undefined,
         address: address || undefined,
+        preferredProviderId: preferredProviderId || undefined,
         country: 'Nigeria',
         state: location.state,
         lga: location.lga,
@@ -167,6 +207,20 @@ export default function CreateOrder() {
                 <Button variant="ghost">Catalog</Button>
               </Link>
             </div>
+
+            {preferredProviderId ? (
+              <div style={{ marginTop: 12 }}>
+                <InlineNotice kind="info">
+                  Rebook request: this order will notify your previous handyman first. If they do not accept, other
+                  nearby handymen can still accept from the marketplace.
+                  <div style={{ marginTop: 8 }}>
+                    <Button type="button" variant="ghost" onClick={() => setPreferredProviderId('')}>
+                      Remove rebook preference
+                    </Button>
+                  </div>
+                </InlineNotice>
+              </div>
+            ) : null}
 
             <form onSubmit={onSubmit} className="col" style={{ marginTop: 12 }}>
               <label style={{ display: 'grid', gap: 6 }}>

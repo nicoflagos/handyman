@@ -1,0 +1,22 @@
+{
+  "months": ["Apr", "May", "Jun", "Jul"],
+  "month1CustomerSignups": 200,
+  "signupMoMGrowthRate": 0.3,
+  "walletFundedRate": 0.35,
+  "ordersPerFundedCustomerPerMonth": 1.2,
+  "acceptanceRate": 0.75,
+  "completionRate": 0.7,
+  "handymenOnboardedPerWeek": 10,
+  "verifiedRateHandymen": 0.7,
+  "activeRateVerifiedHandymen": 0.6,
+  "jobsPerActiveHandymanPerWeek": 4,
+  "weeksPerMonth": 4.33,
+  "b2bAccountsMonth1": 2,
+  "b2bAccountsAddedPerMonth": 2,
+  "b2bJobsPerAccountPerMonth": 20,
+  "b2bCompletionRate": 0.8,
+  "avgServiceFeeNgn": 5000,
+  "takeRateTotal": 0.1,
+  "monthlyGrowthSpendNgn": 800000
+}
+

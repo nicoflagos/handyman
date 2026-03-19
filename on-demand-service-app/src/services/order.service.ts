@@ -8,6 +8,7 @@ type CreateOrderInput = {
   title: string;
   description?: string;
   address?: string;
+  preferredProviderId?: Types.ObjectId;
   country: string;
   state: string;
   lga: string;
@@ -31,6 +32,7 @@ export class OrderService {
       title: input.title,
       description: input.description,
       address: input.address,
+      preferredProviderId: input.preferredProviderId,
       country: input.country,
       state: input.state,
       lga: input.lga,

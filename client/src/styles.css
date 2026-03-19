@@ -319,6 +319,56 @@ h5 {
   color: rgba(7, 17, 14, 0.72);
 }
 
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.72);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  z-index: 1000;
+}
+
+.modalPanel {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+}
+
+.modalClose {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.18);
+  color: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  width: 36px;
+  height: 34px;
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.chipBtn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.chipBtn:hover {
+  background: rgba(0, 0, 0, 0.26);
+}
+
 /* Toggle switch */
 .switch {
   position: relative;

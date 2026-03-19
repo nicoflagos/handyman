@@ -1,0 +1,27 @@
+Handyman Engagement + Revenue Tracker (4 months),,
+,, 
+INPUT,VALUE,NOTES
+Take rate (platform fee total),0.10,"5% customer + 5% handyman"
+Avg service fee (NGN),5000,"Edit to your current average"
+Wallet funded rate,0.35,"Edit to your CURRENT wallet-funded %"
+Orders per funded customer (per month),1.2,
+Signup MoM growth rate,0.30,"Month2=Month1*(1+growth), etc."
+Acceptance rate (created→accepted),0.75,
+Completion rate (accepted→completed),0.70,
+Handymen onboarded per week,10,
+Verified rate (handymen),0.70,
+Active rate (verified handymen),0.60,
+Jobs per active handyman per week,4,
+Weeks per month,4.33,
+B2B accounts (month 1),2,
+B2B accounts added per month,2,
+Jobs per B2B account per month,20,
+B2B completion rate,0.80,
+Monthly growth spend (NGN),800000,"Optional for net view"
+,, 
+MONTH TABLE,,,,,,,,,,,,,,,,
+Month,Customer signups,Wallet funded customers,Customer orders created,Customer accepted,Customer completed,B2B accounts,B2B created,B2B completed,Total demand completed,New handymen,Cum. onboarded,Active handymen,Supply capacity completed,Final completed (min),GMV (NGN),Platform revenue (NGN),Net after growth spend (NGN)
+1 (Apr),200,=B24*$B$6,=C24*$B$7,=D24*$B$9,=E24*$B$10,=$B$16,=G24*$B$18,=H24*$B$19,=F24+I24,=$B$11*$B$15,=K24,=L24*$B$12*$B$13,=M24*$B$14*$B$15,=MIN(J24,N24),=O24*$B$5,=P24*$B$4,=Q24-$B$20
+2 (May),=B24*(1+$B$8),=B25*$B$6,=C25*$B$7,=D25*$B$9,=E25*$B$10,=G24+$B$17,=G25*$B$18,=H25*$B$19,=F25+I25,=$B$11*$B$15,=L24+K25,=L25*$B$12*$B$13,=M25*$B$14*$B$15,=MIN(J25,N25),=O25*$B$5,=P25*$B$4,=Q25-$B$20
+3 (Jun),=B25*(1+$B$8),=B26*$B$6,=C26*$B$7,=D26*$B$9,=E26*$B$10,=G25+$B$17,=G26*$B$18,=H26*$B$19,=F26+I26,=$B$11*$B$15,=L25+K26,=L26*$B$12*$B$13,=M26*$B$14*$B$15,=MIN(J26,N26),=O26*$B$5,=P26*$B$4,=Q26-$B$20
+4 (Jul),=B26*(1+$B$8),=B27*$B$6,=C27*$B$7,=D27*$B$9,=E27*$B$10,=G26+$B$17,=G27*$B$18,=H27*$B$19,=F27+I27,=$B$11*$B$15,=L26+K27,=L27*$B$12*$B$13,=M27*$B$14*$B$15,=MIN(J27,N27),=O27*$B$5,=P27*$B$4,=Q27-$B$20

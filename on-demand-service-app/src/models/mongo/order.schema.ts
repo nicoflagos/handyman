@@ -12,6 +12,7 @@ export type OrderTimelineEvent = {
 export interface IOrderDocument extends Document {
   customerId: Types.ObjectId;
   providerId?: Types.ObjectId;
+  preferredProviderId?: Types.ObjectId;
   serviceKey: string;
   title: string;
   description?: string;
@@ -55,6 +56,7 @@ const OrderSchema = new Schema<IOrderDocument>(
   {
     customerId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     providerId: { type: Schema.Types.ObjectId, ref: 'User', required: false, index: true },
+    preferredProviderId: { type: Schema.Types.ObjectId, ref: 'User', required: false, index: true },
     serviceKey: { type: String, required: true, index: true },
     title: { type: String, required: true },
     description: { type: String },

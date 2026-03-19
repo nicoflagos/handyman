@@ -1,0 +1,7 @@
+Handyman Engagement + Revenue Tracker (automated output)
+
+Month,Customer signups,Wallet funded customers,Customer orders created,Customer accepted,Customer completed,B2B accounts,B2B created,B2B completed,Total demand completed,New handymen,Cum. onboarded,Active handymen,Supply capacity completed,Final completed (min),GMV (NGN),Platform revenue (NGN),Net after growth spend (NGN)
+Apr,200,70,84,63,44.1,2,40,32,76.1,43.3,43.3,18.2,315,76.1,380500,38050,-761950
+May,260,91,109.2,81.9,57.3,4,80,64,121.3,43.3,86.6,36.4,630,121.3,606650,60665,-739335
+Jun,338,118.3,142,106.5,74.5,6,120,96,170.5,43.3,129.9,54.6,944.9,170.5,852645,85265,-714735
+Jul,439.4,153.8,184.5,138.4,96.9,8,160,128,224.9,43.3,173.2,72.7,1259.9,224.9,1124439,112444,-687556

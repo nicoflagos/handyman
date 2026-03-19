@@ -139,8 +139,21 @@ export class OrdersController {
       if (!req.userId) return res.status(401).json({ message: 'Unauthorized' });
       const role = await this.userService.getRole(new Types.ObjectId(req.userId));
       if (role !== 'customer') return res.status(403).json({ message: 'Only customers can create orders' });
-      const { serviceKey, title, description, address, scheduledAt, country, state, lga, lc, price, materialsIncluded, materialsAmount } =
-        req.body || {};
+      const {
+        serviceKey,
+        title,
+        description,
+        address,
+        scheduledAt,
+        country,
+        state,
+        lga,
+        lc,
+        price,
+        materialsIncluded,
+        materialsAmount,
+        preferredProviderId,
+      } = req.body || {};
       const nPrice = Number(price);
       const includesMaterials = !!materialsIncluded;
       const nMaterials = includesMaterials ? Number(materialsAmount) : 0;
@@ -165,6 +178,16 @@ export class OrdersController {
             .json({ message: 'scheduledAt is invalid. Use the date picker or an ISO date like 2026-02-25T14:30' });
         }
         parsedScheduledAt = d;
+      }
+
+      let preferredProviderObjectId: Types.ObjectId | undefined = undefined;
+      if (preferredProviderId) {
+        const raw = String(preferredProviderId).trim();
+        if (!Types.ObjectId.isValid(raw)) return res.status(400).json({ message: 'preferredProviderId is invalid' });
+        if (raw === String(req.userId)) return res.status(400).json({ message: 'preferredProviderId cannot be the customer' });
+        const preferredRole = await this.userService.getRole(new Types.ObjectId(raw));
+        if (preferredRole !== 'provider') return res.status(400).json({ message: 'preferredProviderId must be a handyman account' });
+        preferredProviderObjectId = new Types.ObjectId(raw);
       }
 
       // Ensure customer can afford job fee + 5% platform fee (commission).
@@ -192,6 +215,7 @@ export class OrdersController {
         title,
         description,
         address,
+        preferredProviderId: preferredProviderObjectId,
         country,
         state,
         lga,
@@ -208,6 +232,18 @@ export class OrdersController {
           const orderId = String((order as any)._id);
           const lcName = String((order as any).lc || '').trim();
           const fmt = (n: number) => `₦${Math.round(n).toLocaleString('en-NG')}`;
+
+          if (preferredProviderObjectId) {
+            void pushService
+              .notifyUser(preferredProviderObjectId, {
+                title: 'New rebook request',
+                body: `A customer rebooked you. New job in ${lcName || lc} (${lga} LGA, ${state}). Fee: ${fmt(nPrice)}${
+                  materials > 0 ? ` (+ materials ${fmt(materials)} at start)` : ''
+                }.`,
+                data: { event: 'job_posted', orderId, state, lga, lc, preferred: '1' },
+              })
+              .catch(err => console.log(`[push] job posted (preferred) -> handyman failed: ${(err as any)?.message || err}`));
+          }
           const recipients = await User.find({
             role: 'provider',
             'providerProfile.available': true,
@@ -261,6 +297,10 @@ export class OrdersController {
         // Allow providers to view *unassigned* requested orders that match their profile,
         // so they can review details before accepting.
         if (role === 'provider' && order.status === 'requested' && !order.providerId) {
+          const isPreferred = String((order as any).preferredProviderId || '') === req.userId;
+          if (isPreferred) {
+            return res.status(200).json(this.toSafeOrder(order, { includeVerificationCode: false }));
+          }
           const provider = await this.userService.getProviderProfile(viewerId);
           const profile = provider?.providerProfile;
           const matches =

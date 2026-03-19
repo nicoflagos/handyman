@@ -15,7 +15,11 @@ apiClient.interceptors.request.use(cfg => {
     // Token mode fallback (cookie mode uses HttpOnly cookies).
     if (getAuthMode() === 'token') {
       const token = sessionStorage.getItem('token');
-      if (token) cfg.headers = { ...(cfg.headers || {}), Authorization: `Bearer ${token}` };
+      if (token) {
+        const headers: any = cfg.headers || {};
+        headers.Authorization = `Bearer ${token}`;
+        cfg.headers = headers;
+      }
     }
   } catch {
     // ignore

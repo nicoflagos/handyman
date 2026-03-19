@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../ui/Button';
@@ -12,6 +12,7 @@ import { WorkSamplesGrid } from '../components/dashboard/WorkSamplesGrid';
 import { OrdersList } from '../components/dashboard/OrdersList';
 import { MarketplaceList } from '../components/dashboard/MarketplaceList';
 import { TransactionsList } from '../components/dashboard/TransactionsList';
+import { TopUpModal } from '../components/dashboard/TopUpModal';
 
 function stars(avg?: number) {
   const n = Number(avg);
@@ -29,12 +30,16 @@ function nameFrom(me: Me | null, claims: any) {
 
 export default function Dashboard() {
   const auth = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [market, setMarket] = React.useState<Order[]>([]);
   const [me, setMe] = React.useState<Me | null>(null);
   const [avatarFailed, setAvatarFailed] = React.useState(false);
   const [tx, setTx] = React.useState<Transaction[]>([]);
   const [state, setState] = React.useState<'loading' | 'ready' | 'error'>('loading');
+  const [topUpOpen, setTopUpOpen] = React.useState(false);
+  const [topUpLoading, setTopUpLoading] = React.useState(false);
+  const [topUpError, setTopUpError] = React.useState<string | null>(null);
 
   const role = auth.me?.role || auth.claims?.role || me?.role;
   const isProvider = role === 'provider' || role === 'admin';
@@ -57,6 +62,19 @@ export default function Dashboard() {
       })
       .catch(() => setState('error'));
   }, [isProvider]);
+
+  React.useEffect(() => {
+    if (state !== 'ready') return;
+    if (!me) return;
+    try {
+      if (localStorage.getItem('postRegisterTopUp') === '1') {
+        localStorage.removeItem('postRegisterTopUp');
+        setTopUpOpen(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, [state, me]);
 
   // Marketplace listeners (polling): keep jobs list fresh for handymen.
   React.useEffect(() => {
@@ -98,18 +116,19 @@ export default function Dashboard() {
       ? { label: `${Number(me?.ratingAsHandymanAvg || 0).toFixed(1)} / 5`, stars: stars(me?.ratingAsHandymanAvg) }
       : { label: `${Number(me?.ratingAsCustomerAvg || 0).toFixed(1)} / 5`, stars: stars(me?.ratingAsCustomerAvg) };
 
-  async function handleTopUp() {
-    const raw = prompt('Top-up amount (NGN)', '10000');
-    if (!raw) return;
-    const amt = Number(raw);
-    if (!Number.isFinite(amt) || amt <= 0) return alert('Enter a valid amount');
+  async function submitTopUp(amount: number) {
+    setTopUpError(null);
+    setTopUpLoading(true);
     try {
-      const updated = await topUpWallet(amt);
+      const updated = await topUpWallet(amount);
       setMe(updated);
       const nextTx = await listMyTransactions().catch(() => [] as Transaction[]);
       setTx(nextTx);
+      setTopUpOpen(false);
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Unable to top up wallet');
+      setTopUpError(err?.response?.data?.message || 'Unable to top up wallet');
+    } finally {
+      setTopUpLoading(false);
     }
   }
 
@@ -125,6 +144,13 @@ export default function Dashboard() {
 
   return (
     <Layout>
+      <TopUpModal
+        open={topUpOpen}
+        onClose={() => setTopUpOpen(false)}
+        onSubmit={submitTopUp}
+        loading={topUpLoading}
+        error={topUpError}
+      />
       <div style={{ marginBottom: 14 }}>
         <DashboardHeader title="Dashboard" fullName={fullName} />
       </div>
@@ -196,15 +222,93 @@ export default function Dashboard() {
                   <Button>Book a service</Button>
                 </Link>
               ) : null}
+              {me?.role === 'customer' ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    const last = orders.find(o => o.status === 'completed');
+                    if (!last) return alert('No completed orders yet.');
+                    navigate('/orders/new', {
+                      state: {
+                        mode: 'repeat_last_service',
+                        serviceKey: last.serviceKey,
+                        state: last.state,
+                        lga: last.lga,
+                        lc: last.lc,
+                        price: last.price,
+                        materialsIncluded: last.materialsIncluded,
+                        materialsAmount: last.materialsAmount,
+                      },
+                    });
+                  }}
+                >
+                  Repeat last service
+                </Button>
+              ) : null}
+              {me?.role === 'customer' ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    const last = orders.find(o => o.status === 'completed' && !!o.providerId);
+                    if (!last || !last.providerId) return alert('No completed orders with an assigned handyman yet.');
+                    navigate('/orders/new', {
+                      state: {
+                        mode: 'rebook_handyman',
+                        preferredProviderId: last.providerId,
+                        serviceKey: last.serviceKey,
+                        state: last.state,
+                        lga: last.lga,
+                        lc: last.lc,
+                        price: last.price,
+                        materialsIncluded: last.materialsIncluded,
+                        materialsAmount: last.materialsAmount,
+                      },
+                    });
+                  }}
+                >
+                  Rebook same handyman
+                </Button>
+              ) : null}
               <Button variant="danger" onClick={auth.logout}>
                 Logout
               </Button>
             </div>
+
+            {me?.role === 'customer' ? (
+              <div style={{ marginTop: 12 }}>
+                <div className="muted" style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+                  Bundles (shortcuts)
+                </div>
+                <div className="row" style={{ flexWrap: 'wrap', gap: 10 }}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate('/orders/new?bundle=cleaning_weekly')}
+                    style={{ border: '1px solid rgba(255,255,255,0.14)' }}
+                  >
+                    Weekly cleaning
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate('/orders/new?bundle=ac_maintenance')}
+                    style={{ border: '1px solid rgba(255,255,255,0.14)' }}
+                  >
+                    AC maintenance
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate('/orders/new?bundle=plumbing_checks')}
+                    style={{ border: '1px solid rgba(255,255,255,0.14)' }}
+                  >
+                    Plumbing checks
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </ProfileCard>
 
           {isProvider ? <WorkSamplesGrid urls={Array.isArray(me?.providerProfile?.workImageUrls) ? me!.providerProfile!.workImageUrls! : []} /> : null}
 
-          <WalletCard balance={Number(me?.walletBalance || 0)} onTopUp={handleTopUp} />
+          <WalletCard balance={Number(me?.walletBalance || 0)} onTopUp={() => setTopUpOpen(true)} />
         </div>
 
         <div className="dashboardStack">
