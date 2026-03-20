@@ -1,0 +1,36 @@
+{
+  "months": ["Apr", "May", "Jun", "Jul"],
+  "month1CustomerSignups": 200,
+  "signupMoMGrowthRate": 0.3,
+  "walletFundedRate": 0.35,
+  "ordersPerFundedCustomerPerMonth": 1.2,
+  "acceptanceRate": 0.75,
+  "completionRate": 0.7,
+  "b2bCompletionRate": 0.8,
+  "b2bAccountsMonth1": 2,
+  "b2bAccountsAddedPerMonth": 2,
+  "b2bJobsPerAccountPerMonth": 20,
+  "avgServiceFeeNgn": 5000,
+  "takeRateTotal": 0.1,
+  "fixedAnnualBudgetsNgn": {
+    "render": 342000,
+    "cloudinary": 522000,
+    "github": 500000,
+    "domainAndWebsite": 800000,
+    "firebase": 500000,
+    "engineeringSupport": 500000,
+    "prembly": 1440000,
+    "resend": 720000,
+    "other": 0
+  },
+  "opsMonthlyBudgetsNgn": {
+    "marketing": 1000000,
+    "handymanOnboardingOps": 1200000,
+    "supportOps": 500000,
+    "legalAdmin": 250000,
+    "contingency": 150000,
+    "other": 0
+  },
+  "startingCashNgn": 0
+}
+

@@ -1,0 +1,49 @@
+Handyman CAC + Burn Tracker (4 months),,
+,
+INPUT,VALUE,NOTES
+Take rate (total platform fee),0.10,"5% customer + 5% handyman"
+Avg service fee (NGN),5000,"Edit to your current average"
+Orders per funded customer (per month),1.2,
+Acceptance rate (created->accepted),0.75,
+Completion rate (accepted->completed),0.70,
+Wallet funded rate (signups->funded),0.35,"Edit to your CURRENT wallet-funded %"
+Signup MoM growth rate,0.30,
+B2B completion rate,0.80,
+B2B accounts (month 1),2,
+B2B accounts add/month,2,
+B2B jobs/account/month,20,
+,
+OPS/GROWTH BUDGET (MONTHLY),NGN,"Launch spend that drives acquisition/ops"
+Marketing spend/month,1000000,"Used for CAC calculations"
+Handyman onboarding ops/month,1200000,
+Support+ops/month,500000,
+Legal/admin/month,250000,
+Contingency/month,150000,
+Other ops/month,0,
+Ops/Growth monthly total (computed),=SUM(B17:B22),
+,
+FIXED BUDGETS (ANNUAL),NGN,"Tracker converts to monthly"
+Render (backend, annual),342000,
+Cloudinary (annual),522000,
+GitHub (annual),500000,
+Domain + website (annual),800000,
+Firebase (annual),500000,
+Engineering support (annual),500000,
+Prembly (ID verification, annual),1440000,
+Resend (email, annual),720000,
+Other fixed annual,0,
+Fixed monthly (computed),=SUM(B26:B34)/12,
+Gross burn/month (computed),=B23+B35,
+,
+Starting cash (optional),0,"If you put cash here, tracker estimates runway"
+,
+MONTH TABLE,,,,,,,,,,,,,,,,,
+Month,Customer signups,Funded customers,Customer orders created,Customer accepted,Customer completed,B2B accounts,B2B created,B2B completed,Total completed demand,Final completed (overwrite with actual if needed),GMV (NGN),Platform revenue (NGN),Fixed burn (NGN),Ops/Growth burn (NGN),Gross burn (NGN),Net burn (NGN),CAC/signup (NGN),CAC/funded (NGN),CAC/first completed (NGN),Payback months (CAC funded)
+1 (Apr),200,=B42*$B$9,=C42*$B$6,=D42*$B$7,=E42*$B$8,=$B$12,=G42*$B$14,=H42*$B$11,=F42+I42,=J42,=K42*$B$5,=L42*$B$4,=$B$35,=$B$23,=N42+O42,=P42-M42,=IF(B42>0,$B$17/B42,""),=IF(C42>0,$B$17/C42,""),=IF(K42>0,$B$17/K42,""),=IF(AND(C42>0,M42>0),S42/(M42/C42),"")
+2 (May),=B42*(1+$B$10),=B43*$B$9,=C43*$B$6,=D43*$B$7,=E43*$B$8,=G42+$B$13,=G43*$B$14,=H43*$B$11,=F43+I43,=J43,=K43*$B$5,=L43*$B$4,=$B$35,=$B$23,=N43+O43,=P43-M43,=IF(B43>0,$B$17/B43,""),=IF(C43>0,$B$17/C43,""),=IF(K43>0,$B$17/K43,""),=IF(AND(C43>0,M43>0),S43/(M43/C43),"")
+3 (Jun),=B43*(1+$B$10),=B44*$B$9,=C44*$B$6,=D44*$B$7,=E44*$B$8,=G43+$B$13,=G44*$B$14,=H44*$B$11,=F44+I44,=J44,=K44*$B$5,=L44*$B$4,=$B$35,=$B$23,=N44+O44,=P44-M44,=IF(B44>0,$B$17/B44,""),=IF(C44>0,$B$17/C44,""),=IF(K44>0,$B$17/K44,""),=IF(AND(C44>0,M44>0),S44/(M44/C44),"")
+4 (Jul),=B44*(1+$B$10),=B45*$B$9,=C45*$B$6,=D45*$B$7,=E45*$B$8,=G44+$B$13,=G45*$B$14,=H45*$B$11,=F45+I45,=J45,=K45*$B$5,=L45*$B$4,=$B$35,=$B$23,=N45+O45,=P45-M45,=IF(B45>0,$B$17/B45,""),=IF(C45>0,$B$17/C45,""),=IF(K45>0,$B$17/K45,""),=IF(AND(C45>0,M45>0),S45/(M45/C45),"")
+,
+RUNWAY (optional),,
+Net burn avg/month (4m),=AVERAGE(Q42:Q45),
+Estimated runway months,=IF($B$38>0,IF(B48>0,$B$38/B48,""),"")

@@ -1,0 +1,13 @@
+Handyman CAC + Burn Tracker (automated output)
+
+FixedMonthlyBurn,443667
+OpsMonthlyBurn,3100000
+MarketingMonthlySpend,1000000
+AvgNetBurnMonthly,3469561
+EstimatedRunwayMonths,
+
+Month,Customer signups,Funded customers,Customer orders created,Customer accepted,Customer completed,B2B accounts,B2B created,B2B completed,Total completed,GMV (NGN),Platform revenue (NGN),Fixed burn (NGN),Ops burn (NGN),Gross burn (NGN),Net burn (NGN),CAC/signup (NGN),CAC/funded (NGN),CAC/first completed (NGN),Payback months (CAC funded)
+Apr,200,70,84,63,44.1,2,40,32,76.1,380500,38050,443667,3100000,3543667,3505617,5000,14286,13141,26.28
+May,260,91,109.2,81.9,57.3,4,80,64,121.3,606650,60665,443667,3100000,3543667,3483002,3846,10989,8242,16.48
+Jun,338,118.3,142,106.5,74.5,6,120,96,170.5,852645,85265,443667,3100000,3543667,3458402,2959,8453,5864,11.73
+Jul,439.4,153.8,184.5,138.4,96.9,8,160,128,224.9,1124439,112444,443667,3100000,3543667,3431223,2276,6502,4447,8.89
